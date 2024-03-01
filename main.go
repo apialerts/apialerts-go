@@ -33,36 +33,36 @@ func (client *Client) Send(message string, tags []string, link string) error {
 
 	payload := map[string]interface{}{
 		"message": message,
-		"tags":    tags,
-		"link":    link,
-		}
+		"tags": tags,
+		"link": link,
+	}
 
-		payloadBytes, err := json.Marshal(payload)
-		if err != nil {
-			return err
-		}
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
 
-		url := "https://api.apialerts.com/event"
+	url := "https://api.apialerts.com/event"
 
-		req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
-		if err != nil {
-			return err
-		}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return err
+	}
 
-		req.Header.Set("Authorization", "Bearer "+client.apiKey)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Integration", "golang")
-		req.Header.Set("X-Version", "1.0.0")
+	req.Header.Set("Authorization", "Bearer " + client.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Integration", "golang")
+	req.Header.Set("X-Version", "1.0.0")
 
-		httpClient := &http.Client{}
+	httpClient := &http.Client{}
 
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
+	resp, err :=  httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
-		switch resp.StatusCode {
+	switch resp.StatusCode {
 		case http.StatusOK:
 			var data map[string]interface{}
 			if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
@@ -70,28 +70,28 @@ func (client *Client) Send(message string, tags []string, link string) error {
 			}
 			fmt.Printf("✓ (apialerts.com) Alert sent to %v successfully.", data["project"])
 			return nil
-			case http.StatusBadRequest:
-				return errors.New("bad request")
-				case http.StatusUnauthorized:
-					return errors.New("unauthorized")
-					case http.StatusForbidden:
-						return errors.New("forbidden")
-						case http.StatusTooManyRequests:
-							return errors.New("rate limit exceeded")
-							default:
-								return errors.New("unknown error")
-		}
+		case http.StatusBadRequest:
+			return errors.New("bad request")
+		case http.StatusUnauthorized:
+			return errors.New("unauthorized")
+		case http.StatusForbidden:
+			return errors.New("forbidden")
+		case http.StatusTooManyRequests:
+			return errors.New("rate limit exceeded")
+		default:
+			return errors.New("unknown error")
+	}
 
 }
 
 // THIS IS SOME EXAMPLE CODE
 /*
 func main() {
-client := ApiAlertsClient()
-client.SetApiKey("API_KEY_GOES_HERE")
-err := client.Send("Golang Test Message", []string{"Golang is better than kotlin"}, "https://github.com/apialerts/")
-if err != nil {
-fmt.Println("Error:", err)
-}
+	client := ApiAlertsClient()
+	client.SetApiKey("API_KEY_GOES_HERE")
+	err := client.Send("Golang Test Message", []string{"Golang is better than kotlin"}, "https://github.com/apialerts/")
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
 }
 */
