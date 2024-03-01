@@ -3,10 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"os"
 	"errors"
-	"net/http"
 	"fmt"
+	"net/http"
+	"os"
 )
 
 type Client struct {
@@ -25,10 +25,10 @@ func (client *Client) SetApiKey(apiKey string) {
 
 func (client *Client) Send(message string, tags []string, link string) error {
 	if client.apiKey == "" {
-		return errors.New("Api Key is Missing")
+		return errors.New("api key is missing")
 	}
 	if message == "" {
-		return errors.New("Message is required")
+		return errors.New("message is required")
 	}
 	
 	payload := map[string]interface{}{
@@ -71,15 +71,15 @@ func (client *Client) Send(message string, tags []string, link string) error {
 			fmt.Printf("✓ (apialerts.com) Alert sent to %v successfully.", data["project"])
 			return nil
 		case http.StatusBadRequest:
-			return errors.New("Bad Request")
+			return errors.New("bad request")
 		case http.StatusUnauthorized:
-			return errors.New("Unauthorized")
+			return errors.New("unauthorized")
 		case http.StatusForbidden:
-			return errors.New("Forbidden")
+			return errors.New("forbidden")
 		case http.StatusTooManyRequests:
-			return errors.New("Rate Limit Exceeded")
+			return errors.New("rate limit exceeded")
 		default:
-			return errors.New("Unknown Error")
+			return errors.New("unknown error")
 	}
 	
 }
