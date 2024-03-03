@@ -1,3 +1,3 @@
-module apialerts-go
+module github.com/apialerts/apialerts-go
 
-go 1.19
+go 1.22
