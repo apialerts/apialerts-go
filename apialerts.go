@@ -1,4 +1,4 @@
-package main
+package apialerts
 
 import (
 	"bytes"
@@ -25,7 +25,7 @@ func (client *Client) SetApiKey(apiKey string) {
 
 func (client *Client) Send(message string, tags []string, link string) error {
 	if client.apiKey == "" {
-		return errors.New("api key is missing")
+		return errors.New("api key is required")
 	}
 	if message == "" {
 		return errors.New("message is required")
@@ -33,8 +33,8 @@ func (client *Client) Send(message string, tags []string, link string) error {
 
 	payload := map[string]interface{}{
 		"message": message,
-		"tags": tags,
-		"link": link,
+		"tags":    tags,
+		"link":    link,
 	}
 
 	payloadBytes, err := json.Marshal(payload)
@@ -49,37 +49,37 @@ func (client *Client) Send(message string, tags []string, link string) error {
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer " + client.apiKey)
+	req.Header.Set("Authorization", "Bearer "+client.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Integration", "golang")
 	req.Header.Set("X-Version", "1.0.0")
 
 	httpClient := &http.Client{}
 
-	resp, err :=  httpClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	switch resp.StatusCode {
-		case http.StatusOK:
-			var data map[string]interface{}
-			if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-				return err
-			}
-			fmt.Printf("✓ (apialerts.com) Alert sent to %v successfully.", data["project"])
-			return nil
-		case http.StatusBadRequest:
-			return errors.New("bad request")
-		case http.StatusUnauthorized:
-			return errors.New("unauthorized")
-		case http.StatusForbidden:
-			return errors.New("forbidden")
-		case http.StatusTooManyRequests:
-			return errors.New("rate limit exceeded")
-		default:
-			return errors.New("unknown error")
+	case http.StatusOK:
+		var data map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			return err
+		}
+		fmt.Printf("✓ (apialerts.com) Alert sent to %v successfully.", data["project"])
+		return nil
+	case http.StatusBadRequest:
+		return errors.New("bad request")
+	case http.StatusUnauthorized:
+		return errors.New("unauthorized")
+	case http.StatusForbidden:
+		return errors.New("forbidden")
+	case http.StatusTooManyRequests:
+		return errors.New("rate limit exceeded")
+	default:
+		return errors.New("unknown error")
 	}
 
 }
