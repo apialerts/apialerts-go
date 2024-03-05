@@ -6,17 +6,25 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
+	"sync"
 )
 
 type Client struct {
 	apiKey string
 }
 
-func ApiAlertsClient() *Client {
-	return &Client{
-		apiKey: os.Getenv("APIALERTS_API_KEY"),
-	}
+var (
+	instance *Client
+	once     sync.Once
+)
+
+func ApiAlerts() *Client {
+	once.Do(func() {
+		instance = &Client{
+			apiKey: "",
+		}
+	})
+	return instance
 }
 
 func (client *Client) SetApiKey(apiKey string) {
@@ -83,15 +91,3 @@ func (client *Client) Send(message string, tags []string, link string) error {
 	}
 
 }
-
-// THIS IS SOME EXAMPLE CODE
-/*
-func main() {
-	client := ApiAlertsClient()
-	client.SetApiKey("API_KEY_GOES_HERE")
-	err := client.Send("Golang Test Message", []string{"Golang is better than kotlin"}, "https://github.com/apialerts/")
-	if err != nil {
-		fmt.Println("Error:", err)
-	}
-}
-*/
