@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 type Client struct {
@@ -23,7 +24,34 @@ func (client *Client) SetApiKey(apiKey string) {
 	client.apiKey = apiKey
 }
 
-func (client *Client) Send(message string, tags []string, link string) error {
+func (client *Client) Send(message string, tags []string, link string, debugMode ...bool) {
+	isDebug := false
+	if len(debugMode) > 0 {
+		isDebug = debugMode[0]
+	}
+
+	if isDebug {
+		errChan := make(chan error, 1)
+		go func() {
+			errChan <- client.send(message, tags, link)
+		}()
+
+		select {
+		case err := <-errChan:
+			if err != nil {
+				log.Printf("Error sending message: %v", err)
+			}
+		case <-time.After(5 * time.Second):
+			log.Println("Send operation timed out")
+		}
+	} else {
+		go func() {
+			_ = client.send(message, tags, link)
+		}()
+	}
+}
+
+func (client *Client) send(message string, tags []string, link string) error {
 	if client.apiKey == "" {
 		return errors.New("api key is missing")
 	}
@@ -81,5 +109,4 @@ func (client *Client) Send(message string, tags []string, link string) error {
 	default:
 		return errors.New("unknown error")
 	}
-
 }
