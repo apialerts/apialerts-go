@@ -41,7 +41,7 @@ func (client *Client) Send(message string, tags []string, link string, debugMode
 			if err != nil {
 				log.Printf("Error sending message: %v", err)
 			}
-		case <-time.After(5 * time.Second):
+		case <-time.After(30 * time.Second):
 			log.Println("Send operation timed out")
 		}
 	} else {
