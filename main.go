@@ -24,7 +24,7 @@ func (client *Client) SetApiKey(apiKey string) {
 	client.apiKey = apiKey
 }
 
-func (client *Client) Send(message string, tags []string, link string, debugMode ...bool) {
+func (client *Client) SendAsync(message string, tags []string, link string, debugMode ...bool) {
 	isDebug := false
 	if len(debugMode) > 0 {
 		isDebug = debugMode[0]
@@ -33,7 +33,7 @@ func (client *Client) Send(message string, tags []string, link string, debugMode
 	if isDebug {
 		errChan := make(chan error, 1)
 		go func() {
-			errChan <- client.send(message, tags, link)
+			errChan <- client.Send(message, tags, link)
 		}()
 
 		select {
@@ -46,12 +46,12 @@ func (client *Client) Send(message string, tags []string, link string, debugMode
 		}
 	} else {
 		go func() {
-			_ = client.send(message, tags, link)
+			_ = client.Send(message, tags, link)
 		}()
 	}
 }
 
-func (client *Client) send(message string, tags []string, link string) error {
+func (client *Client) Send(message string, tags []string, link string) error {
 	if client.apiKey == "" {
 		return errors.New("api key is missing")
 	}
