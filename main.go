@@ -7,16 +7,29 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
 type Client struct {
-	apiKey string
+	apiKey  string
+	timeout time.Duration
 }
 
 func ApiAlertsClient() *Client {
+	timeout := 30 * time.Second
+
+	if os.Getenv("APIALERTS_TIMEOUT") != "" {
+		timeoutSeconds, err := strconv.Atoi(os.Getenv("APIALERTS_TIMEOUT"))
+
+		if err == nil {
+			timeout = time.Duration(timeoutSeconds) * time.Second
+		}
+	}
+
 	return &Client{
-		apiKey: os.Getenv("APIALERTS_API_KEY"),
+		apiKey:  os.Getenv("APIALERTS_API_KEY"),
+		timeout: timeout,
 	}
 }
 
