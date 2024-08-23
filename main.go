@@ -12,6 +12,8 @@ import (
 )
 
 const X_VERSION = "2.0.0"
+const X_INTEGRATION = "golang"
+const DEFAULT_API_URL = "https://api.apialerts.com/event"
 
 var defaultConfig = model.APIAlertsConfig{
 	Logging: true,
@@ -52,10 +54,6 @@ func (client *APIAlertsClient) sendToUrlWithApiKey(
 		return errors.New("message is required")
 	}
 
-	if event.Channel == "" {
-		return errors.New("channel is required")
-	}
-
 	payloadBytes, err := json.Marshal(event)
 	if err != nil {
 		return err
@@ -68,7 +66,7 @@ func (client *APIAlertsClient) sendToUrlWithApiKey(
 
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Integration", "golang")
+	req.Header.Set("X-Integration", X_INTEGRATION)
 	req.Header.Set("X-Version", X_VERSION)
 
 	httpClient := &http.Client{}
@@ -103,8 +101,7 @@ func (client *APIAlertsClient) sendToUrlWithApiKey(
 }
 
 func (client *APIAlertsClient) SendWithApiKey(apiKey string, event model.APIAlertsEvent) error {
-	url := "https://api.apialerts.com/event"
-	return client.sendToUrlWithApiKey(url, apiKey, event)
+	return client.sendToUrlWithApiKey(DEFAULT_API_URL, apiKey, event)
 }
 
 func (client *APIAlertsClient) SendAsyncWithApiKey(apiKey string, event model.APIAlertsEvent) {
