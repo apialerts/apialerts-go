@@ -1,0 +1,40 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - revive
+    - staticcheck
+    - unused
+    - gosimple
+    - govet
+    - gocyclo
+    - gofmt
+    - goimports
+    - gosec
+    - ineffassign
+    - misspell
+    - unconvert
+    - whitespace
+
+linters-settings:
+  govet:
+    check-shadow: true
+  
+  revive:
+    min-confidence: 0.8
+        
+  unused:
+    check-exported: true
+        
+  gocyclo:
+    min-complexity: 15
+        
+  ineffassign:
+    check-assigned: true
+
+issues:
+  exclude-rules:
+    - linters:
+        - revive
+      text: "exported .* should have comment or be unexported"
