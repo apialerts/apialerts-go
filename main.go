@@ -1,4 +1,4 @@
-package main
+package apialerts
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"github.com/apialerts/apialerts-go/model"
 )
 
-const X_VERSION = "1.0.0"
+const X_VERSION = "1.0.1"
 const X_INTEGRATION = "golang"
 const DEFAULT_API_URL = "https://api.apialerts.com/event"
 

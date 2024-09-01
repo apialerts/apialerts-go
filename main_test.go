@@ -1,4 +1,4 @@
-package main
+package apialerts
 
 import (
 	"encoding/json"
