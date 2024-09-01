@@ -67,8 +67,8 @@ func TestSend(t *testing.T) {
 		if r.Header.Get("X-Integration") != "golang" {
 			t.Errorf("Expected X-Integration header to be 'golang'")
 		}
-		if r.Header.Get("X-Version") != "2.0.0" {
-			t.Errorf("Expected X-Version header to be '2.0.0'")
+		if r.Header.Get("X-Version") != "1.0.1" {
+			t.Errorf("Expected X-Version header to be '1.0.1'")
 		}
 
 		var payload map[string]interface{}
