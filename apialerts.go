@@ -110,7 +110,7 @@ func (client *APIAlertsClient) SendAsyncWithApiKey(apiKey string, event model.AP
 		select {
 		case err := <-errChan:
 			if err != nil {
-				log.Printf("x (apialerts.com) Error: : %v", err)
+				log.Printf("x (apialerts.com) Error: %v", err)
 			}
 		case <-time.After(30 * time.Second):
 			log.Println("x (apialerts.com) Error: Send operation timed out")
@@ -132,7 +132,7 @@ func (client *APIAlertsClient) SendAsync(event model.APIAlertsEvent) {
 		select {
 		case err := <-errChan:
 			if err != nil {
-				log.Printf("x (apialerts.com) Error: : %v", err)
+				log.Printf("x (apialerts.com) Error: %v", err)
 			}
 		case <-time.After(client.Config.Timeout):
 			log.Println("x (apialerts.com) Error: Send operation timed out")
