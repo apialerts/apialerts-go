@@ -1,0 +1,25 @@
+name: Pull Request Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+      - name: Test
+        run: go test -v
+      - name: Send Build Alert
+        working-directory: ./sample
+        run: go run github.go --build
+        env:
+          APIALERTS_API_KEY: ${{ secrets.APIALERTS_API_KEY }}
