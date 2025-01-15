@@ -41,7 +41,7 @@ event := apialerts.Event {
     Link:    "http://example.com",     // optional
 }
 
-client.Send(event)
+apialerts.Send(event)
 ```
 
 The apialerts.sendAsync() methods are also available if you need to wait for a successful execution. However, the send() functions are generally always preferred.
@@ -51,7 +51,7 @@ The apialerts.sendAsync() methods are also available if you need to wait for a s
 You may have the need to talk to different API Alerts workspaces in your application. You can use the SendWithAPIKey() functions to send alerts to override the default apikey for that single send call
 
 ```go
-SendWithApiKey("other_api_key", event)
+apialerts.SendWithApiKey("other_api_key", event)
 ```
 
 ### Feedback & Support
