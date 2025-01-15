@@ -67,8 +67,8 @@ func TestSend(t *testing.T) {
 		if r.Header.Get("X-Integration") != "golang" {
 			t.Errorf("Expected X-Integration header to be 'golang'")
 		}
-		if r.Header.Get("X-Version") != "1.0.1" {
-			t.Errorf("Expected X-Version header to be '1.0.1'")
+		if r.Header.Get("X-Version") != IntegrationVersion {
+			t.Errorf("Expected X-Version header to be '%s'", IntegrationVersion)
 		}
 
 		var payload map[string]interface{}
@@ -83,7 +83,7 @@ func TestSend(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(map[string]string{"project": "test_project"})
+		err = json.NewEncoder(w).Encode(map[string]string{"workspace": "test_workspace", "channel": "test_channel"})
 
 		if err != nil {
 			t.Errorf("Error encoding response: %v", err)
@@ -112,7 +112,7 @@ func TestSend(t *testing.T) {
 			Channel: "test_channel",
 		})
 
-	if err == nil || err.Error() != "message is required" {
+	if err == nil || err.Error() != "x (apialerts.com) Error: message is required" {
 		t.Errorf("Expected 'message is required' error, got %v", err)
 	}
 }

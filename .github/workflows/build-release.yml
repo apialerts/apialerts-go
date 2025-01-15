@@ -1,0 +1,23 @@
+name: Release
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build for release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+      - name: Test
+        run: go test -v
+      - name: Send Release Alert
+        working-directory: ./sample
+        run: go run github.go --publish
+        env:
+          APIALERTS_API_KEY: ${{ secrets.APIALERTS_API_KEY }}
