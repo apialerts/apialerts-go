@@ -16,11 +16,11 @@ go get github.com/apialerts/apialerts-go
 
 ### Event structure
 ```go
-event := model.APIAlertsEvent {
+event := apialerts.Event{
     Channel: "test_channel",           // optional, uses the default channel if not provided
     Message: "Test message",           // required
-    Tags   : []string{"tag1", "tag2"}, // optional
-    Link   : "http://example.com",     // optional
+    Tags:    []string{"tag1", "tag2"}, // optional
+    Link:    "http://example.com",     // optional
 }
 ```
 

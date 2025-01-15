@@ -4,17 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"github.com/apialerts/apialerts-go"
-	"github.com/apialerts/apialerts-go/model"
 	"os"
 )
 
 func main() {
 	build, release, publish := parseFlags()
-
-	if !*build && !*release && !*publish {
-		fmt.Println("Usage: go run github.go --build|--release|--publish")
-		return
-	}
 
 	apiKey := getApiKey()
 	if apiKey == "" {
@@ -22,10 +16,17 @@ func main() {
 		return
 	}
 
-	event := createEvent(*build, *release, *publish)
-	client := apialerts.ApiAlertsClient(apiKey)
+	apialerts.Configure(apiKey)
 
-	if err := client.Send(event); err != nil {
+	if !*build && !*release && !*publish {
+		fmt.Println("Usage: go run github.go --build|--release|--publish")
+		return
+	}
+
+	event := createEvent(*build, *release, *publish)
+	apialerts.Configure(apiKey)
+
+	if err := apialerts.SendAsync(event); err != nil {
 		fmt.Println("Error:", err)
 	} else {
 		fmt.Println("Alert sent successfully.")
@@ -44,7 +45,7 @@ func getApiKey() string {
 	return os.Getenv("APIALERTS_API_KEY")
 }
 
-func createEvent(build, release, publish bool) model.APIAlertsEvent {
+func createEvent(build, release, publish bool) apialerts.Event {
 	eventChannel := "developer"
 	eventMessage := "apialerts-go"
 	var eventTags []string
@@ -61,7 +62,7 @@ func createEvent(build, release, publish bool) model.APIAlertsEvent {
 		eventTags = []string{"CI/CD", "Go", "Deploy"}
 	}
 
-	return model.APIAlertsEvent{
+	return apialerts.Event{
 		Channel: eventChannel,
 		Message: eventMessage,
 		Tags:    eventTags,

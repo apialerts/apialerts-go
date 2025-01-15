@@ -6,58 +6,96 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	"github.com/apialerts/apialerts-go/model"
 )
 
 func TestApiAlertsClient(t *testing.T) {
-	config := model.APIAlertsConfig{
-		Logging: true,
+	config := Config{
 		Timeout: 45 * time.Second,
-		Debug:   false,
+		Debug:   true,
+	}
+	ConfigureWithConfig("test_api_key", config)
+
+	if instance.apiKey != "test_api_key" {
+		t.Errorf("Expected API key to be 'test_api_key', got '%s'", instance.apiKey)
 	}
 
-	client := ApiAlertsClientWithConfig("test_api_key", config)
-
-	if client.ApiKey != "test_api_key" {
-		t.Errorf("Expected API key to be 'test_api_key', got '%s'", client.ApiKey)
+	if instance.config.Timeout != 45*time.Second {
+		t.Errorf("Expected timeout to be 45 seconds, got %v", instance.config.Timeout)
 	}
 
-	if client.Config.Timeout != 45*time.Second {
-		t.Errorf("Expected timeout to be 45 seconds, got %v", client.Config.Timeout)
+	if !instance.config.Debug {
+		t.Errorf("Expected Debug to be false, got %v", instance.config.Debug)
 	}
 }
 
 func TestSetApiKey(t *testing.T) {
-	client := &APIAlertsClient{}
-	client.SetApiKey("new_api_key")
+	Configure("test_api_key")
+	SetApiKey("new_api_key")
 
-	if client.ApiKey != "new_api_key" {
-		t.Errorf("Expected API key to be 'new_api_key', got '%s'", client.ApiKey)
+	if instance.apiKey != "new_api_key" {
+		t.Errorf("Expected API key to be 'new_api_key', got '%s'", instance.apiKey)
 	}
 }
 
 func TestSendAsync(t *testing.T) {
-	config := model.APIAlertsConfig{
-		Logging: true,
-		Timeout: 45 * time.Second,
-		Debug:   true,
-	}
+	server := createTestServer(t)
+	defer server.Close()
 
-	client := ApiAlertsClientWithConfig("test_api_key", config)
+	Configure("test_api_key")
 
-	event := model.APIAlertsEvent{
+	event := Event{
 		Channel: "test_channel",
 		Message: "Test message",
 		Tags:    []string{"tag1", "tag2"},
-		Link:    "http://example.com",
+		Link:    "https://example.com",
 	}
 
-	client.SendAsync(event)
+	err := sendToUrlWithApiKeyAsync(
+		server.URL,
+		"test_api_key",
+		event)
+
+	if err != nil {
+		t.Errorf("Error sending message: %v", err)
+	}
 }
 
 func TestSend(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := createTestServer(t)
+	defer server.Close()
+
+	Configure("test_api_key")
+
+	event := Event{
+		Channel: "test_channel",
+		Message: "Test message",
+		Tags:    []string{"tag1", "tag2"},
+		Link:    "https://example.com",
+	}
+
+	err := sendToUrlWithApiKeyAsync(
+		server.URL,
+		"test_api_key",
+		event)
+
+	if err != nil {
+		t.Errorf("Error sending message: %v", err)
+	}
+
+	err = sendToUrlWithApiKeyAsync(
+		server.URL,
+		"test_api_key",
+		Event{
+			Channel: "test_channel",
+		})
+
+	if err == nil || err.Error() != "x (apialerts.com) Error: message is required" {
+		t.Errorf("Expected 'message is required' error, got %v", err)
+	}
+}
+
+func createTestServer(t *testing.T) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer test_api_key" {
 			t.Errorf("Expected Authorization header to be 'Bearer test_api_key'")
 		}
@@ -73,7 +111,6 @@ func TestSend(t *testing.T) {
 
 		var payload map[string]interface{}
 		err := json.NewDecoder(r.Body).Decode(&payload)
-
 		if err != nil {
 			t.Errorf("Error decoding payload: %v", err)
 		}
@@ -84,35 +121,8 @@ func TestSend(t *testing.T) {
 
 		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(map[string]string{"workspace": "test_workspace", "channel": "test_channel"})
-
 		if err != nil {
 			t.Errorf("Error encoding response: %v", err)
 		}
 	}))
-	defer server.Close()
-
-	client := ApiAlertsClientWithConfig("test_api_key", defaultConfig)
-
-	err := client.sendToUrlWithApiKey(
-		server.URL,
-		"test_api_key",
-		model.APIAlertsEvent{
-			Channel: "test_channel",
-			Message: "Test message",
-		})
-
-	if err != nil {
-		t.Errorf("Error sending message: %v", err)
-	}
-
-	err = client.sendToUrlWithApiKey(
-		server.URL,
-		"test_api_key",
-		model.APIAlertsEvent{
-			Channel: "test_channel",
-		})
-
-	if err == nil || err.Error() != "x (apialerts.com) Error: message is required" {
-		t.Errorf("Expected 'message is required' error, got %v", err)
-	}
 }
