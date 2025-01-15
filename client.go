@@ -33,19 +33,17 @@ func (client *Client) sendToUrlWithApiKey(url string, apiKey string, event Event
 
 	select {
 	case err := <-errChan:
-		if err != nil {
+		if err != nil && client.config.Debug {
 			log.Printf("x (apialerts.com) Error: %v", err)
 		}
 	case <-time.After(client.config.Timeout):
-		log.Println("x (apialerts.com) Error: Send operation timed out")
+		if client.config.Debug {
+			log.Println("x (apialerts.com) Error: Send operation timed out")
+		}
 	}
 }
 
 func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event Event) error {
-	log.Println("x (apialerts.com) Sending alert...")
-	log.Println(apiKey)
-	log.Println(event)
-
 	if apiKey == "" {
 		return errors.New("x (apialerts.com) Error: api key is missing, use SetApiKey() to set it")
 	}
@@ -75,7 +73,9 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("x (apialerts.com) Error closing response body: %v", err)
+			if client.config.Debug {
+				log.Printf("x (apialerts.com) Error closing response body: %v", err)
+			}
 		}
 	}()
 
@@ -87,6 +87,13 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 		}
 		if client.config.Debug {
 			log.Printf("✓ (apialerts.com) Alert sent to %v (%v) successfully.", data["workspace"], data["channel"])
+			if warnings, ok := data["errors"].([]interface{}); ok {
+				for _, e := range warnings {
+					if errStr, ok := e.(string); ok {
+						log.Printf("! (apialerts.com) Warning: %v", errStr)
+					}
+				}
+			}
 		}
 		return nil
 	case http.StatusBadRequest:
