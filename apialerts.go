@@ -80,7 +80,7 @@ func (client *APIAlertsClient) sendToUrlWithApiKey(
 			return err
 		}
 		if client.Config.Logging {
-			log.Printf("✓ (apialerts.com) Alert sent to %v successfully.", data["workspace"])
+			log.Printf("✓ (apialerts.com) Alert sent to %v (%v) successfully.", data["workspace"], data["channel"])
 		}
 		return nil
 	case http.StatusBadRequest:
