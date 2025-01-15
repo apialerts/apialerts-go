@@ -50,7 +50,7 @@ func TestSendAsync(t *testing.T) {
 		Link:    "https://example.com",
 	}
 
-	err := sendToUrlWithApiKeyAsync(
+	err := GetInstance().sendToUrlWithApiKeyAsync(
 		server.URL,
 		"test_api_key",
 		event)
@@ -73,7 +73,7 @@ func TestSend(t *testing.T) {
 		Link:    "https://example.com",
 	}
 
-	err := sendToUrlWithApiKeyAsync(
+	err := GetInstance().sendToUrlWithApiKeyAsync(
 		server.URL,
 		"test_api_key",
 		event)
@@ -82,7 +82,7 @@ func TestSend(t *testing.T) {
 		t.Errorf("Error sending message: %v", err)
 	}
 
-	err = sendToUrlWithApiKeyAsync(
+	err = GetInstance().sendToUrlWithApiKeyAsync(
 		server.URL,
 		"test_api_key",
 		Event{
