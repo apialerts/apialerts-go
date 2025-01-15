@@ -43,11 +43,11 @@ func (client *APIAlertsClient) sendToUrlWithApiKey(
 	event model.APIAlertsEvent,
 ) error {
 	if apiKey == "" {
-		return errors.New("api key is missing")
+		return errors.New("x (apialerts.com) Error: api key is missing, use SetApiKey() to set it")
 	}
 
 	if event.Message == "" {
-		return errors.New("message is required")
+		return errors.New("x (apialerts.com) Error: message is required")
 	}
 
 	payloadBytes, err := json.Marshal(event)
@@ -84,15 +84,15 @@ func (client *APIAlertsClient) sendToUrlWithApiKey(
 		}
 		return nil
 	case http.StatusBadRequest:
-		return errors.New("bad request")
+		return errors.New("x (apialerts.com) Error: bad request")
 	case http.StatusUnauthorized:
-		return errors.New("unauthorized")
+		return errors.New("x (apialerts.com) Error: unauthorized")
 	case http.StatusForbidden:
-		return errors.New("forbidden")
+		return errors.New("x (apialerts.com) Error: forbidden")
 	case http.StatusTooManyRequests:
-		return errors.New("rate limit exceeded")
+		return errors.New("x (apialerts.com) Error: rate limit exceeded")
 	default:
-		return errors.New("unknown error")
+		return errors.New("x (apialerts.com) Error: unknown error")
 	}
 }
 
@@ -110,10 +110,10 @@ func (client *APIAlertsClient) SendAsyncWithApiKey(apiKey string, event model.AP
 		select {
 		case err := <-errChan:
 			if err != nil {
-				log.Printf("Error sending message: %v", err)
+				log.Printf("x (apialerts.com) Error: : %v", err)
 			}
 		case <-time.After(30 * time.Second):
-			log.Println("Send operation timed out")
+			log.Println("x (apialerts.com) Error: Send operation timed out")
 		}
 	} else {
 		go func() {
@@ -132,10 +132,10 @@ func (client *APIAlertsClient) SendAsync(event model.APIAlertsEvent) {
 		select {
 		case err := <-errChan:
 			if err != nil {
-				log.Printf("Error sending message: %v", err)
+				log.Printf("x (apialerts.com) Error: : %v", err)
 			}
 		case <-time.After(client.Config.Timeout):
-			log.Println("Send operation timed out")
+			log.Println("x (apialerts.com) Error: Send operation timed out")
 		}
 	} else {
 		go func() {
