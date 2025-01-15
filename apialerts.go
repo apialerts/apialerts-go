@@ -11,10 +11,6 @@ import (
 	"github.com/apialerts/apialerts-go/model"
 )
 
-const X_VERSION = "1.0.1"
-const X_INTEGRATION = "golang"
-const DEFAULT_API_URL = "https://api.apialerts.com/event"
-
 var defaultConfig = model.APIAlertsConfig{
 	Logging: true,
 	Timeout: 30 * time.Second,
@@ -66,8 +62,8 @@ func (client *APIAlertsClient) sendToUrlWithApiKey(
 
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Integration", X_INTEGRATION)
-	req.Header.Set("X-Version", X_VERSION)
+	req.Header.Set("X-Integration", IntegrationName)
+	req.Header.Set("X-Version", IntegrationVersion)
 
 	httpClient := &http.Client{}
 
@@ -84,7 +80,7 @@ func (client *APIAlertsClient) sendToUrlWithApiKey(
 			return err
 		}
 		if client.Config.Logging {
-			log.Printf("✓ (apialerts.com) Alert sent to %v successfully.", data["project"])
+			log.Printf("✓ (apialerts.com) Alert sent to %v successfully.", data["workspace"])
 		}
 		return nil
 	case http.StatusBadRequest:
@@ -101,7 +97,7 @@ func (client *APIAlertsClient) sendToUrlWithApiKey(
 }
 
 func (client *APIAlertsClient) SendWithApiKey(apiKey string, event model.APIAlertsEvent) error {
-	return client.sendToUrlWithApiKey(DEFAULT_API_URL, apiKey, event)
+	return client.sendToUrlWithApiKey(ApiUrl, apiKey, event)
 }
 
 func (client *APIAlertsClient) SendAsyncWithApiKey(apiKey string, event model.APIAlertsEvent) {
