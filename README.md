@@ -12,76 +12,52 @@ Add the following dependency to your GO application
 go get github.com/apialerts/apialerts-go
 ```
 
-## Usage
+### Initialize the client
 
-### Event structure
+The client is implemented as a singleton, ensuring that only one instance is created and used throughout the application.
+
 ```go
-event := model.APIAlertsEvent {
+// Basic initialization with default config
+apialerts.Configure("your-api-key")
+
+// or initialization with custom config
+customConfig := apialerts.Config {
+    Timeout: 45 * time.Second,  // default is 30 seconds
+    Debug:   True,              // default is false
+}
+apialerts.ConfigureWithConfig("test_api_key", customConfig)
+}
+```
+
+### Send Events
+
+You can send alerts by constructing the Event struct and passing it to the Send() function.
+
+```go
+event := apialerts.Event {
     Channel: "test_channel",           // optional, uses the default channel if not provided
     Message: "Test message",           // required
-    Tags   : []string{"tag1", "tag2"}, // optional
-    Link   : "http://example.com",     // optional
-}
-```
-
-
-### Initialize the client 
-```go
-// Custom config can be passed to the client
-customConfig := model.APIAlertsConfig {
-    Logging: true,
-    Timeout: 30 * time.Second,
-    Debug:   false,
-}
-
-client := ApiAlertsClientWithConfig("test_api_key", customConfig)
-// or
-client := ApiAlertsClient("test_api_key")
-}
-```
-
-### Send an event
-
-```go
-event := model.APIAlertsEvent {
-    Channel: "test_channel",           // optional, uses the default channel if not provided
-    Message: "Test message",
     Tags:    []string{"tag1", "tag2"}, // optional
     Link:    "http://example.com",     // optional
 }
 
-err := client.Send(event)
-if err != nil {
-    log.Printf("Error sending message: %v", err)
-}
+apialerts.Send(event)
 ```
 
-### Send an event with an alternate api key
+The apialerts.sendAsync() methods are also available if you need to wait for a successful execution. However, the send() functions are generally always preferred.
+
+### Send with API Key functions
+
+You may have the need to talk to different API Alerts workspaces in your application. You can use the SendWithAPIKey() functions to send alerts to override the default apikey for that single send call
 
 ```go
-client.SendWithApiKey("other project api key", event)
+apialerts.SendWithApiKey("other_api_key", event)
 ```
 
+### Feedback & Support
 
-### Send message asynchronously
+If you have any questions or feedback, please create an issue on our GitHub repository. We are always looking to improve our service and would love to hear from you. Thanks for using API Alerts!
 
-Async methods of the Send() function are available in situations (like AWS Lambda) where you need to wait for the event execution. However, using the Send() functions are generally always preferred.
-
-```go
-client.SendAsync(event)
-```
-
-
-### Send message asynchronously with custom config
-
-Custom config can also be applied with a Send event
-
-```go
-func main() {
-    //... client initialization
-    client.SendAsyncWithApiKey("other project api key", event)
-}
-```
 
 
 
