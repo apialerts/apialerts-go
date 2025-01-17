@@ -1,4 +1,5 @@
 name: Publish
+
 on:
   release:
     types: [created]
@@ -8,6 +9,14 @@ jobs:
     name: Publish
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+      - name: Test
+        run: go test -v
       - name: Send Publish Alert
         working-directory: ./sample
         run: go run github.go --publish

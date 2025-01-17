@@ -58,6 +58,7 @@ func createEvent(build, release, publish bool) apialerts.Event {
 		eventMessage = "Go -Build for publish success"
 		eventTags = []string{"CI/CD", "Go", "Build"}
 	} else if publish {
+		eventChannel = "releases"
 		eventMessage = "Go - GitHub publish success"
 		eventTags = []string{"CI/CD", "Go", "Deploy"}
 	}
