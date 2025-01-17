@@ -19,6 +19,6 @@ jobs:
         run: go test -v
       - name: Send Release Alert
         working-directory: ./sample
-        run: go run github.go --publish
+        run: go run github.go --release
         env:
           APIALERTS_API_KEY: ${{ secrets.APIALERTS_API_KEY }}
