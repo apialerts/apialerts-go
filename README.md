@@ -1,8 +1,6 @@
-# apialerts-go
+# API Alerts • GO Client
 
-Golang client for the [apialerts.com](https://apialerts.com/) platform
-
-[Docs](https://apialerts.com/docs/go) • [GitHub](https://github.com/apialerts/apialerts-go)
+[GitHub Repo](https://github.com/apialerts/apialerts-go)
 
 ## Installation
 
@@ -53,13 +51,3 @@ You may have the need to talk to different API Alerts workspaces in your applica
 ```go
 apialerts.SendWithApiKey("other_api_key", event)
 ```
-
-### Feedback & Support
-
-If you have any questions or feedback, please create an issue on our GitHub repository. We are always looking to improve our service and would love to hear from you. Thanks for using API Alerts!
-
-
-
-
-
-
