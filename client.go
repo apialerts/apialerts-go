@@ -10,9 +10,10 @@ import (
 )
 
 type Client struct {
-	apiKey     string
-	config     Config
-	httpClient *http.Client
+	apiKey      string
+	integration string
+	config      Config
+	httpClient  *http.Client
 }
 
 func initializeClient(apiKey string, config Config) *Client {
@@ -64,7 +65,11 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Integration", IntegrationName)
+	integration := IntegrationName
+	if client.integration != "" {
+		integration = client.integration
+	}
+	req.Header.Set("X-Integration", integration)
 	req.Header.Set("X-Version", IntegrationVersion)
 
 	resp, err := client.httpClient.Do(req)

@@ -34,9 +34,11 @@ You can send alerts by constructing the Event struct and passing it to the Send(
 ```go
 event := apialerts.Event {
     Channel: "test_channel",           // optional, uses the default channel if not provided
+    Event:   "user.purchase",          // optional, event name for routing
+    Title:   "New Sale",               // optional, event title
     Message: "Test message",           // required
     Tags:    []string{"tag1", "tag2"}, // optional
-    Link:    "http://example.com",     // optional
+    Link:    "https://example.com",    // optional
 }
 
 apialerts.Send(event)

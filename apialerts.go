@@ -46,6 +46,13 @@ func SetApiKey(apiKey string) {
 	instance.apiKey = apiKey
 }
 
+// SetIntegration overrides the default integration name sent in the X-Integration header.
+// This is intended for use by libraries and tools built on top of this SDK (e.g. a CLI tool)
+// to identify themselves separately from the default "golang" integration.
+func SetIntegration(name string) {
+	instance.integration = name
+}
+
 // Send sends an event asynchronously using the default API key.
 func Send(event Event) {
 	go instance.sendToUrlWithApiKey(ApiUrl, instance.apiKey, event)
