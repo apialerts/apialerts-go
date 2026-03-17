@@ -26,10 +26,10 @@ func main() {
 	event := createEvent(*build, *release, *publish)
 	apialerts.Configure(apiKey)
 
-	if err := apialerts.SendAsync(event); err != nil {
+	if result, err := apialerts.SendAsync(event); err != nil {
 		fmt.Println("Error:", err)
 	} else {
-		fmt.Println("Alert sent successfully.")
+		fmt.Printf("Alert sent to %s (%s) successfully.\n", result.Workspace, result.Channel)
 	}
 }
 

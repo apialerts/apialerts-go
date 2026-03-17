@@ -20,13 +20,16 @@ func TestSendAsync(t *testing.T) {
 		Link:    "https://example.com",
 	}
 
-	err := GetInstance().sendToUrlWithApiKeyAsync(
+	result, err := GetInstance().sendToUrlWithApiKeyAsync(
 		server.URL,
 		"test_api_key",
 		event)
 
 	if err != nil {
 		t.Errorf("Error sending message: %v", err)
+	}
+	if result == nil {
+		t.Error("Expected result, got nil")
 	}
 }
 
@@ -43,7 +46,7 @@ func TestSend(t *testing.T) {
 		Link:    "https://example.com",
 	}
 
-	err := GetInstance().sendToUrlWithApiKeyAsync(
+	_, err := GetInstance().sendToUrlWithApiKeyAsync(
 		server.URL,
 		"test_api_key",
 		event)
@@ -52,14 +55,14 @@ func TestSend(t *testing.T) {
 		t.Errorf("Error sending message: %v", err)
 	}
 
-	err = GetInstance().sendToUrlWithApiKeyAsync(
+	_, err = GetInstance().sendToUrlWithApiKeyAsync(
 		server.URL,
 		"test_api_key",
 		Event{
 			Channel: "test_channel",
 		})
 
-	if err == nil || err.Error() != "x (apialerts.com) Error: message is required" {
+	if err == nil || err.Error() != "message is required" {
 		t.Errorf("Expected 'message is required' error, got %v", err)
 	}
 }

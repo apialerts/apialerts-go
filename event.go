@@ -8,3 +8,9 @@ type Event struct {
 	Tags    []string `json:"tags"`
 	Link    string   `json:"link"`
 }
+
+type Result struct {
+	Workspace string
+	Channel   string
+	Warnings  []string
+}

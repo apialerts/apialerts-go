@@ -58,8 +58,8 @@ func Send(event Event) {
 	go instance.sendToUrlWithApiKey(ApiUrl, instance.apiKey, event)
 }
 
-// SendAsync sends an event asynchronously using the default API key, waits for the response, and returns an error if any.
-func SendAsync(event Event) error {
+// SendAsync sends an event using the default API key, waits for the response, and returns the result or an error.
+func SendAsync(event Event) (*Result, error) {
 	return instance.sendToUrlWithApiKeyAsync(ApiUrl, instance.apiKey, event)
 }
 
@@ -68,7 +68,7 @@ func SendWithApiKey(apiKey string, event Event) {
 	instance.sendToUrlWithApiKey(ApiUrl, apiKey, event)
 }
 
-// SendWithApiKeyAsync sends an event asynchronously using the provided API key, waits for the response, and returns an error if any.
-func SendWithApiKeyAsync(apiKey string, event Event) error {
+// SendWithApiKeyAsync sends an event using the provided API key, waits for the response, and returns the result or an error.
+func SendWithApiKeyAsync(apiKey string, event Event) (*Result, error) {
 	return instance.sendToUrlWithApiKeyAsync(ApiUrl, apiKey, event)
 }
