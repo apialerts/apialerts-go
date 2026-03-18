@@ -24,7 +24,6 @@ func main() {
 	}
 
 	event := createEvent(*build, *release, *publish)
-	apialerts.Configure(apiKey)
 
 	if result, err := apialerts.SendAsync(event); err != nil {
 		fmt.Println("Error:", err)

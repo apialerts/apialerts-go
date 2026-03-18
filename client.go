@@ -10,13 +10,18 @@ import (
 )
 
 type Client struct {
-	apiKey      string
-	integration string
-	config      Config
-	httpClient  *http.Client
+	apiKey             string
+	integration        string
+	integrationVersion string
+	baseURL            string
+	config             Config
+	httpClient         *http.Client
 }
 
 func initializeClient(apiKey string, config Config) *Client {
+	if config.Timeout == 0 {
+		config.Timeout = 30 * time.Second
+	}
 	return &Client{
 		apiKey: apiKey,
 		config: config,
@@ -26,22 +31,28 @@ func initializeClient(apiKey string, config Config) *Client {
 	}
 }
 
+type sendOutcome struct {
+	result *Result
+	err    error
+}
+
 func (client *Client) sendToUrlWithApiKey(url string, apiKey string, event Event) {
-	resultChan := make(chan *Result, 1)
-	errChan := make(chan error, 1)
+	ch := make(chan sendOutcome, 1)
 	go func() {
 		result, err := client.sendToUrlWithApiKeyAsync(url, apiKey, event)
-		resultChan <- result
-		errChan <- err
+		ch <- sendOutcome{result, err}
 	}()
 
 	select {
-	case err := <-errChan:
-		if err != nil && client.config.Debug {
-			log.Printf("x (apialerts.com) Error: %v", err)
-		} else if result := <-resultChan; result != nil && client.config.Debug {
-			log.Printf("✓ (apialerts.com) Alert sent to %v (%v) successfully.", result.Workspace, result.Channel)
-			for _, w := range result.Warnings {
+	case outcome := <-ch:
+		if !client.config.Debug {
+			return
+		}
+		if outcome.err != nil {
+			log.Printf("x (apialerts.com) Error: %v", outcome.err)
+		} else if outcome.result != nil {
+			log.Printf("✓ (apialerts.com) Alert sent to %v (%v) successfully.", outcome.result.Workspace, outcome.result.Channel)
+			for _, w := range outcome.result.Warnings {
 				log.Printf("! (apialerts.com) Warning: %v", w)
 			}
 		}
@@ -66,7 +77,7 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +88,12 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 	if client.integration != "" {
 		integration = client.integration
 	}
+	version := IntegrationVersion
+	if client.integrationVersion != "" {
+		version = client.integrationVersion
+	}
 	req.Header.Set("X-Integration", integration)
-	req.Header.Set("X-Version", IntegrationVersion)
+	req.Header.Set("X-Version", version)
 
 	resp, err := client.httpClient.Do(req)
 	if err != nil {
@@ -88,7 +103,7 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		var data map[string]interface{}
+		var data map[string]any
 		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 			return nil, err
 		}
@@ -117,7 +132,7 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 	}
 }
 
-func stringVal(m map[string]interface{}, key string) string {
+func stringVal(m map[string]any, key string) string {
 	if v, ok := m[key].(string); ok {
 		return v
 	}

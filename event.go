@@ -1,12 +1,13 @@
 package apialerts
 
 type Event struct {
-	Channel string   `json:"channel"`
-	Event   string   `json:"event"`
-	Title   string   `json:"title"`
-	Message string   `json:"message"`
-	Tags    []string `json:"tags"`
-	Link    string   `json:"link"`
+	Channel string                 `json:"channel"`
+	Event   string                 `json:"event"`
+	Title   string                 `json:"title"`
+	Message string                 `json:"message"`
+	Tags    []string               `json:"tags"`
+	Link    string                 `json:"link"`
+	Data    map[string]any `json:"data,omitempty"`
 }
 
 type Result struct {

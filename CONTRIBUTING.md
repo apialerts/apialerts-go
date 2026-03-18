@@ -40,4 +40,8 @@ Follow the existing code style and conventions. Document your code well.
 
 ### Running Tests
 
-Ensure all tests pass before submitting your pull request
+Ensure all tests pass before submitting your pull request:
+
+```bash
+go test -v ./...
+```

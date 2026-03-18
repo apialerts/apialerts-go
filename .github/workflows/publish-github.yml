@@ -14,9 +14,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22'
+          go-version-file: 'go.mod'
       - name: Test
-        run: go test -v
+        run: go test -v ./...
       - name: Send Publish Alert
         working-directory: ./sample
         run: go run github.go --publish

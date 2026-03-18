@@ -1,6 +1,7 @@
 package apialerts
 
 import (
+	"errors"
 	"sync"
 	"time"
 )
@@ -9,6 +10,7 @@ var (
 	instance *Client
 	once     sync.Once
 )
+
 
 type Config struct {
 	Timeout time.Duration // Timeout specifies the duration to wait before timing out a request.
@@ -36,39 +38,65 @@ func ConfigureWithConfig(apiKey string, config Config) {
 	setupClient(apiKey, config)
 }
 
-// GetInstance returns the singleton instance of the Client.
-func GetInstance() *Client {
-	return instance
-}
-
 // SetApiKey sets a new API key for the client instance.
 func SetApiKey(apiKey string) {
+	if instance == nil {
+		return
+	}
 	instance.apiKey = apiKey
 }
 
-// SetIntegration overrides the default integration name sent in the X-Integration header.
-// This is intended for use by libraries and tools built on top of this SDK (e.g. a CLI tool)
-// to identify themselves separately from the default "golang" integration.
-func SetIntegration(name string) {
-	instance.integration = name
+// SetOverrides configures internal client settings used by first-party integrations
+// such as the official apialerts CLI. This is not intended for general SDK use.
+//
+// Parameters:
+//   - integration: identifies the caller (e.g. "apialerts-cli")
+//   - version: the caller's version string (e.g. "1.2.0")
+//   - baseURL: optional API URL override for testing or staging; pass empty string to use the default
+func SetOverrides(integration, version, baseURL string) {
+	if instance == nil {
+		return
+	}
+	instance.integration = integration
+	instance.integrationVersion = version
+	instance.baseURL = baseURL
+}
+
+func (client *Client) resolveURL() string {
+	if client.baseURL != "" {
+		return client.baseURL
+	}
+	return ApiUrl
 }
 
 // Send sends an event asynchronously using the default API key.
 func Send(event Event) {
-	go instance.sendToUrlWithApiKey(ApiUrl, instance.apiKey, event)
+	if instance == nil {
+		return
+	}
+	go instance.sendToUrlWithApiKey(instance.resolveURL(), instance.apiKey, event)
 }
 
 // SendAsync sends an event using the default API key, waits for the response, and returns the result or an error.
 func SendAsync(event Event) (*Result, error) {
-	return instance.sendToUrlWithApiKeyAsync(ApiUrl, instance.apiKey, event)
+	if instance == nil {
+		return nil, errors.New("client not initialized — call Configure() first")
+	}
+	return instance.sendToUrlWithApiKeyAsync(instance.resolveURL(), instance.apiKey, event)
 }
 
 // SendWithApiKey sends an event asynchronously using the provided API key.
 func SendWithApiKey(apiKey string, event Event) {
-	instance.sendToUrlWithApiKey(ApiUrl, apiKey, event)
+	if instance == nil {
+		return
+	}
+	go instance.sendToUrlWithApiKey(instance.resolveURL(), apiKey, event)
 }
 
 // SendWithApiKeyAsync sends an event using the provided API key, waits for the response, and returns the result or an error.
 func SendWithApiKeyAsync(apiKey string, event Event) (*Result, error) {
-	return instance.sendToUrlWithApiKeyAsync(ApiUrl, apiKey, event)
+	if instance == nil {
+		return nil, errors.New("client not initialized — call Configure() first")
+	}
+	return instance.sendToUrlWithApiKeyAsync(instance.resolveURL(), apiKey, event)
 }
