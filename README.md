@@ -1,11 +1,25 @@
 # API Alerts • Go SDK
 
-[GitHub Repo](https://github.com/apialerts/apialerts-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/apialerts/apialerts-go.svg)](https://pkg.go.dev/github.com/apialerts/apialerts-go)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+[GitHub](https://github.com/apialerts/apialerts-go) • [API Alerts](https://apialerts.com)
+
+Effortless project notifications. Send once, deliver everywhere.
 
 ## Installation
 
 ```bash
 go get github.com/apialerts/apialerts-go
+```
+
+## Quick Start
+
+```go
+import apialerts "github.com/apialerts/apialerts-go"
+
+apialerts.Configure("your-api-key")
+apialerts.Send(apialerts.Event{Message: "Deploy complete"})
 ```
 
 ## Setup
@@ -70,6 +84,20 @@ The `Result` contains:
 | `Channel` | Name of the channel the event was delivered to |
 | `Warnings` | Any non-fatal warnings returned by the API (e.g. unknown fields) |
 
+## Event Fields
+
+| Field     | Type             | Required | Description                      |
+|-----------|------------------|----------|----------------------------------|
+| `Message` | `string`         | Yes      | Main notification message        |
+| `Channel` | `string`         | No       | Target channel name              |
+| `Event`   | `string`         | No       | Event key (e.g. `ci.deploy`)     |
+| `Title`   | `string`         | No       | Short title                      |
+| `Tags`    | `[]string`       | No       | Categorisation tags              |
+| `Link`    | `string`         | No       | URL attached to the notification |
+| `Data`    | `map[string]any` | No       | Arbitrary key-value metadata     |
+
+Null/empty fields are omitted from the JSON payload automatically.
+
 ## Send to Multiple Workspaces
 
 Use `SendWithApiKey` or `SendWithApiKeyAsync` to override the API key for a single call.
@@ -79,3 +107,9 @@ apialerts.SendWithApiKey("other-workspace-api-key", event)
 
 result, err := apialerts.SendWithApiKeyAsync("other-workspace-api-key", event)
 ```
+
+## Links
+
+- [Documentation](https://apialerts.com/docs)
+- [Sign up](https://apialerts.com)
+- [GitHub Issues](https://github.com/apialerts/apialerts-go/issues)

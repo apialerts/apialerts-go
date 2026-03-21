@@ -3,7 +3,7 @@ package apialerts
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -31,29 +31,33 @@ func initializeClient(apiKey string, config Config) *Client {
 	}
 }
 
-type sendOutcome struct {
-	result *Result
-	err    error
-}
-
 func (client *Client) sendToUrlWithApiKey(url string, apiKey string, event Event) {
-	ch := make(chan sendOutcome, 1)
+	// Critical checks — always log regardless of debug setting
+	if apiKey == "" {
+		log.Printf("x (apialerts.com) Error: api key is missing")
+		return
+	}
+	if event.Message == "" {
+		log.Printf("x (apialerts.com) Error: message is required")
+		return
+	}
+
+	ch := make(chan *SendResult, 1)
 	go func() {
-		result, err := client.sendToUrlWithApiKeyAsync(url, apiKey, event)
-		ch <- sendOutcome{result, err}
+		ch <- client.sendToUrlWithApiKeyAsync(url, apiKey, event)
 	}()
 
 	select {
-	case outcome := <-ch:
+	case result := <-ch:
 		if !client.config.Debug {
 			return
 		}
-		if outcome.err != nil {
-			log.Printf("x (apialerts.com) Error: %v", outcome.err)
-		} else if outcome.result != nil {
-			log.Printf("✓ (apialerts.com) Alert sent to %v (%v) successfully.", outcome.result.Workspace, outcome.result.Channel)
-			for _, w := range outcome.result.Warnings {
-				log.Printf("! (apialerts.com) Warning: %v", w)
+		if !result.Success {
+			log.Printf("x (apialerts.com) Error: %s", result.Error)
+		} else {
+			log.Printf("✓ (apialerts.com) Alert sent to %s (%s)", result.Workspace, result.Channel)
+			for _, w := range result.Warnings {
+				log.Printf("! (apialerts.com) Warning: %s", w)
 			}
 		}
 	case <-time.After(client.config.Timeout):
@@ -63,27 +67,24 @@ func (client *Client) sendToUrlWithApiKey(url string, apiKey string, event Event
 	}
 }
 
-func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event Event) (*Result, error) {
+func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event Event) *SendResult {
 	if apiKey == "" {
-		return nil, errors.New("api key is missing, use Configure() to set it")
+		return &SendResult{Success: false, Error: "api key is missing, use Configure() to set it"}
 	}
-
 	if event.Message == "" {
-		return nil, errors.New("message is required")
+		return &SendResult{Success: false, Error: "message is required"}
 	}
 
 	payloadBytes, err := json.Marshal(event)
 	if err != nil {
-		return nil, err
+		return &SendResult{Success: false, Error: "failed to serialize event"}
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payloadBytes))
 	if err != nil {
-		return nil, err
+		return &SendResult{Success: false, Error: "failed to create request"}
 	}
 
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("Content-Type", "application/json")
 	integration := IntegrationName
 	if client.integration != "" {
 		integration = client.integration
@@ -92,12 +93,14 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 	if client.integrationVersion != "" {
 		version = client.integrationVersion
 	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Integration", integration)
 	req.Header.Set("X-Version", version)
 
 	resp, err := client.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return &SendResult{Success: false, Error: err.Error()}
 	}
 	defer resp.Body.Close()
 
@@ -105,30 +108,31 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 	case http.StatusOK:
 		var data map[string]any
 		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-			return nil, err
+			return &SendResult{Success: false, Error: "invalid response from server"}
 		}
-		result := &Result{
+		result := &SendResult{
+			Success:   true,
 			Workspace: stringVal(data, "workspace"),
 			Channel:   stringVal(data, "channel"),
 		}
-		if warnings, ok := data["errors"].([]interface{}); ok {
+		if warnings, ok := data["warnings"].([]interface{}); ok {
 			for _, w := range warnings {
 				if s, ok := w.(string); ok {
 					result.Warnings = append(result.Warnings, s)
 				}
 			}
 		}
-		return result, nil
+		return result
 	case http.StatusBadRequest:
-		return nil, errors.New("bad request")
+		return &SendResult{Success: false, Error: "bad request"}
 	case http.StatusUnauthorized:
-		return nil, errors.New("unauthorized — check your API key")
+		return &SendResult{Success: false, Error: "unauthorized — check your API key"}
 	case http.StatusForbidden:
-		return nil, errors.New("forbidden")
+		return &SendResult{Success: false, Error: "forbidden"}
 	case http.StatusTooManyRequests:
-		return nil, errors.New("rate limit exceeded")
+		return &SendResult{Success: false, Error: "rate limit exceeded"}
 	default:
-		return nil, errors.New("unexpected error")
+		return &SendResult{Success: false, Error: fmt.Sprintf("unexpected status: %d", resp.StatusCode)}
 	}
 }
 

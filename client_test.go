@@ -47,9 +47,9 @@ func TestSendMissingMessage(t *testing.T) {
 	resetInstance()
 	Configure("test_api_key")
 
-	_, err := instance.sendToUrlWithApiKeyAsync("http://unused", "test_api_key", Event{})
-	if err == nil || err.Error() != "message is required" {
-		t.Errorf("expected 'message is required', got: %v", err)
+	result := instance.sendToUrlWithApiKeyAsync("http://unused", "test_api_key", Event{})
+	if result.Success || result.Error != "message is required" {
+		t.Errorf("expected 'message is required', got: %v", result.Error)
 	}
 }
 
@@ -57,9 +57,9 @@ func TestSendMissingApiKey(t *testing.T) {
 	resetInstance()
 	Configure("test_api_key")
 
-	_, err := instance.sendToUrlWithApiKeyAsync("http://unused", "", Event{Message: "hello"})
-	if err == nil {
-		t.Error("expected error for missing API key, got nil")
+	result := instance.sendToUrlWithApiKeyAsync("http://unused", "", Event{Message: "hello"})
+	if result.Success || result.Error == "" {
+		t.Error("expected failure for missing API key")
 	}
 }
 
@@ -75,9 +75,9 @@ func TestSend200Success(t *testing.T) {
 
 	Configure("test_api_key")
 
-	result, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if !result.Success {
+		t.Fatalf("expected success, got error: %s", result.Error)
 	}
 	if result.Workspace != "Acme Corp" {
 		t.Errorf("expected workspace 'Acme Corp', got '%s'", result.Workspace)
@@ -92,15 +92,15 @@ func TestSend200WithWarnings(t *testing.T) {
 	server := serverWithResponse(http.StatusOK, map[string]any{
 		"workspace": "Acme Corp",
 		"channel":   "general",
-		"errors":    []string{"unknown field: foo", "tag limit reached"},
+		"warnings":  []string{"unknown field: foo", "tag limit reached"},
 	})
 	defer server.Close()
 
 	Configure("test_api_key")
 
-	result, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if !result.Success {
+		t.Fatalf("expected success, got error: %s", result.Error)
 	}
 	if len(result.Warnings) != 2 {
 		t.Errorf("expected 2 warnings, got %d", len(result.Warnings))
@@ -120,9 +120,9 @@ func TestSend200EmptyWarnings(t *testing.T) {
 
 	Configure("test_api_key")
 
-	result, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if !result.Success {
+		t.Fatalf("expected success, got error: %s", result.Error)
 	}
 	if len(result.Warnings) != 0 {
 		t.Errorf("expected no warnings, got %d", len(result.Warnings))
@@ -136,9 +136,9 @@ func TestSend400BadRequest(t *testing.T) {
 
 	Configure("test_api_key")
 
-	_, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err == nil || err.Error() != "bad request" {
-		t.Errorf("expected 'bad request' error, got: %v", err)
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if result.Success || result.Error != "bad request" {
+		t.Errorf("expected 'bad request', got: %v", result.Error)
 	}
 }
 
@@ -149,9 +149,9 @@ func TestSend401Unauthorized(t *testing.T) {
 
 	Configure("test_api_key")
 
-	_, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err == nil || !strings.Contains(err.Error(), "unauthorized") {
-		t.Errorf("expected 'unauthorized' error, got: %v", err)
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if result.Success || !strings.Contains(result.Error, "unauthorized") {
+		t.Errorf("expected 'unauthorized' error, got: %v", result.Error)
 	}
 }
 
@@ -162,9 +162,9 @@ func TestSend403Forbidden(t *testing.T) {
 
 	Configure("test_api_key")
 
-	_, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err == nil || err.Error() != "forbidden" {
-		t.Errorf("expected 'forbidden' error, got: %v", err)
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if result.Success || result.Error != "forbidden" {
+		t.Errorf("expected 'forbidden', got: %v", result.Error)
 	}
 }
 
@@ -175,9 +175,9 @@ func TestSend429RateLimit(t *testing.T) {
 
 	Configure("test_api_key")
 
-	_, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err == nil || err.Error() != "rate limit exceeded" {
-		t.Errorf("expected 'rate limit exceeded' error, got: %v", err)
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if result.Success || result.Error != "rate limit exceeded" {
+		t.Errorf("expected 'rate limit exceeded', got: %v", result.Error)
 	}
 }
 
@@ -188,9 +188,9 @@ func TestSend500UnexpectedError(t *testing.T) {
 
 	Configure("test_api_key")
 
-	_, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err == nil || err.Error() != "unexpected error" {
-		t.Errorf("expected 'unexpected error', got: %v", err)
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if result.Success || result.Error == "" {
+		t.Errorf("expected failure for 500, got: %v", result.Error)
 	}
 }
 
@@ -198,9 +198,9 @@ func TestSendNetworkError(t *testing.T) {
 	resetInstance()
 	Configure("test_api_key")
 
-	_, err := instance.sendToUrlWithApiKeyAsync("http://127.0.0.1:1", "test_api_key", Event{Message: "hello"})
-	if err == nil {
-		t.Error("expected network error, got nil")
+	result := instance.sendToUrlWithApiKeyAsync("http://127.0.0.1:1", "test_api_key", Event{Message: "hello"})
+	if result.Success || result.Error == "" {
+		t.Error("expected network error")
 	}
 }
 
@@ -214,9 +214,9 @@ func TestSendInvalidJsonResponse(t *testing.T) {
 
 	Configure("test_api_key")
 
-	_, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err == nil {
-		t.Error("expected JSON parse error, got nil")
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if result.Success || result.Error == "" {
+		t.Error("expected JSON parse error")
 	}
 }
 
@@ -227,9 +227,9 @@ func TestSendTimeout(t *testing.T) {
 
 	ConfigureWithConfig("test_api_key", Config{Timeout: 100 * time.Millisecond})
 
-	_, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
-	if err == nil {
-		t.Error("expected timeout error, got nil")
+	result := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
+	if result.Success || result.Error == "" {
+		t.Error("expected timeout error")
 	}
 }
 
@@ -295,9 +295,9 @@ func TestSetOverridesBaseURL(t *testing.T) {
 	Configure("test_api_key")
 	SetOverrides("cli", "1.2.0", server.URL)
 
-	result, err := SendAsync(Event{Message: "hello"})
-	if err != nil {
-		t.Fatalf("expected no error, got: %v", err)
+	result := SendAsync(Event{Message: "hello"})
+	if !result.Success {
+		t.Fatalf("expected success, got error: %s", result.Error)
 	}
 	if result.Workspace != "Acme Corp" {
 		t.Errorf("expected workspace 'Acme Corp', got '%s'", result.Workspace)
@@ -391,4 +391,37 @@ func TestRequestPayloadOmitsEmptyData(t *testing.T) {
 	if _, exists := decoded["data"]; exists {
 		t.Errorf("expected 'data' to be omitted when nil, but it was present")
 	}
+}
+
+// --- SendWithApiKeyAsync test ---
+
+func TestSendWithApiKeyAsync(t *testing.T) {
+	resetInstance()
+	server, _, captured := captureServer(t, http.StatusOK, map[string]any{
+		"workspace": "test",
+		"channel":   "test",
+	})
+	defer server.Close()
+
+	Configure("original_key")
+	SetOverrides("", "", server.URL)
+
+	result := SendWithApiKeyAsync("override_key", Event{Message: "hello"})
+	if !result.Success {
+		t.Fatalf("expected success, got error: %s", result.Error)
+	}
+
+	req := <-captured
+	if req.Header.Get("Authorization") != "Bearer override_key" {
+		t.Errorf("expected override key in Authorization, got '%s'", req.Header.Get("Authorization"))
+	}
+}
+
+// --- Fire-and-forget does not panic ---
+
+func TestSendDoesNotPanic(t *testing.T) {
+	resetInstance()
+	Configure("test_api_key")
+	// Should not panic even with a bad URL
+	Send(Event{Message: "hello"})
 }
