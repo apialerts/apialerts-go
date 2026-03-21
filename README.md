@@ -10,7 +10,7 @@ Effortless project notifications. Send once, deliver everywhere.
 ## Installation
 
 ```bash
-go get github.com/apialerts/apialerts-go
+go get github.com/apialerts/apialerts-go@v1.2.0
 ```
 
 ## Quick Start

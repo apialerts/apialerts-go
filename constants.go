@@ -3,5 +3,5 @@ package apialerts
 const (
 	ApiUrl             = "https://api.apialerts.com/event"
 	IntegrationName    = "golang"
-	IntegrationVersion = "2.0.0"
+	IntegrationVersion = "1.2.0"
 )
