@@ -72,7 +72,7 @@ func main() {
 
 	// Integration test — called from apialerts-integration-tests with no args
 	default:
-		r1 := apialerts.SendAsync(apialerts.Event{Message: "Go SDK - minimal"})
+		r1 := apialerts.SendAsync(apialerts.Event{Message: "Go SDK - minimal", Channel: "testing"})
 		if !r1.Success {
 			fmt.Fprintln(os.Stderr, "Error (minimal):", r1.Error)
 			os.Exit(1)
@@ -81,7 +81,7 @@ func main() {
 
 		r2 := apialerts.SendAsync(apialerts.Event{
 			Message: "Go SDK - full",
-			Channel: "developer",
+			Channel: "testing",
 			Event:   "sdk.test",
 			Title:   "Integration Test",
 			Tags:    []string{"CI/CD", "Go"},
