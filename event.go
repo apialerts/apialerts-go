@@ -10,10 +10,8 @@ type Event struct {
 	Data    map[string]any `json:"data,omitempty"`
 }
 
-type SendResult struct {
-	Success   bool
+type Result struct {
 	Workspace string
 	Channel   string
 	Warnings  []string
-	Error     string
 }

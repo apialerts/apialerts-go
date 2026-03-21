@@ -1,6 +1,7 @@
 package apialerts
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -74,11 +75,11 @@ func Send(event Event) {
 	go instance.sendToUrlWithApiKey(instance.resolveURL(), instance.apiKey, event)
 }
 
-// SendAsync sends an event using the default API key and returns a SendResult.
-// Never panics or returns an error — check result.Success instead.
-func SendAsync(event Event) *SendResult {
+// SendAsync sends an event using the default API key.
+// Returns an error if the send fails — check err before using result.
+func SendAsync(event Event) (*Result, error) {
 	if instance == nil {
-		return &SendResult{Success: false, Error: "client not initialized — call Configure() first"}
+		return nil, fmt.Errorf("client not initialized — call Configure() first")
 	}
 	return instance.sendToUrlWithApiKeyAsync(instance.resolveURL(), instance.apiKey, event)
 }
@@ -92,11 +93,11 @@ func SendWithApiKey(apiKey string, event Event) {
 	go instance.sendToUrlWithApiKey(instance.resolveURL(), apiKey, event)
 }
 
-// SendWithApiKeyAsync sends an event using the provided API key and returns a SendResult.
-// Never panics or returns an error — check result.Success instead.
-func SendWithApiKeyAsync(apiKey string, event Event) *SendResult {
+// SendWithApiKeyAsync sends an event using the provided API key.
+// Returns an error if the send fails — check err before using result.
+func SendWithApiKeyAsync(apiKey string, event Event) (*Result, error) {
 	if instance == nil {
-		return &SendResult{Success: false, Error: "client not initialized — call Configure() first"}
+		return nil, fmt.Errorf("client not initialized — call Configure() first")
 	}
 	return instance.sendToUrlWithApiKeyAsync(instance.resolveURL(), apiKey, event)
 }

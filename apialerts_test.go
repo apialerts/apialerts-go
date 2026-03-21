@@ -52,11 +52,8 @@ func TestDefaultTimeout(t *testing.T) {
 func TestNotInitialized(t *testing.T) {
 	resetInstance()
 
-	result := SendAsync(Event{Message: "test"})
-	if result.Success {
-		t.Error("Expected failure when not initialized")
-	}
-	if result.Error == "" {
-		t.Error("Expected error message when not initialized")
+	_, err := SendAsync(Event{Message: "test"})
+	if err == nil {
+		t.Error("Expected error when not initialized")
 	}
 }
