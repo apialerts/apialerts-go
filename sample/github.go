@@ -8,9 +8,11 @@ import (
 )
 
 func main() {
-	build := flag.Bool("build", false, "Send build notification")
+	build   := flag.Bool("build",   false, "Send build notification")
 	release := flag.Bool("release", false, "Send release notification")
 	publish := flag.Bool("publish", false, "Send publish notification")
+	integrationTests := flag.Bool("integration-tests", false, "Run integration tests")
+	channel := flag.String("channel", "testing", "Channel for integration test sends")
 	flag.Parse()
 
 	apiKey := os.Getenv("APIALERTS_API_KEY")
@@ -70,9 +72,8 @@ func main() {
 		}
 		fmt.Printf("✓ Sent to %s (%s)\n", result.Workspace, result.Channel)
 
-	// Integration test — called from apialerts-integration-tests with no args
-	default:
-		r1 := apialerts.SendAsync(apialerts.Event{Message: "Go SDK - minimal", Channel: "testing"})
+	case *integrationTests:
+		r1 := apialerts.SendAsync(apialerts.Event{Message: "Go SDK - minimal", Channel: *channel})
 		if !r1.Success {
 			fmt.Fprintln(os.Stderr, "Error (minimal):", r1.Error)
 			os.Exit(1)
@@ -81,7 +82,7 @@ func main() {
 
 		r2 := apialerts.SendAsync(apialerts.Event{
 			Message: "Go SDK - full",
-			Channel: "testing",
+			Channel: *channel,
 			Event:   "sdk.test",
 			Title:   "Integration Test",
 			Tags:    []string{"CI/CD", "Go"},
@@ -92,5 +93,9 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("✓ sent to %s (%s)\n", r2.Workspace, r2.Channel)
+
+	default:
+		fmt.Fprintln(os.Stderr, "Error: pass --build, --release, --publish, or --integration-tests")
+		os.Exit(1)
 	}
 }
