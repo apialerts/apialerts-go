@@ -15,8 +15,8 @@ func main() {
 
 	apiKey := os.Getenv("APIALERTS_API_KEY")
 	if apiKey == "" {
-		fmt.Println("Error: APIALERTS_API_KEY environment variable is not set")
-		return
+		fmt.Fprintln(os.Stderr, "Error: APIALERTS_API_KEY environment variable is not set")
+		os.Exit(1)
 	}
 
 	apialerts.Configure(apiKey)
@@ -35,8 +35,8 @@ func main() {
 			Link:    link,
 		})
 		if !result.Success {
-			fmt.Println("Error:", result.Error)
-			return
+			fmt.Fprintln(os.Stderr, "Error:", result.Error)
+			os.Exit(1)
 		}
 		fmt.Printf("✓ Sent to %s (%s)\n", result.Workspace, result.Channel)
 
@@ -50,8 +50,8 @@ func main() {
 			Link:    link,
 		})
 		if !result.Success {
-			fmt.Println("Error:", result.Error)
-			return
+			fmt.Fprintln(os.Stderr, "Error:", result.Error)
+			os.Exit(1)
 		}
 		fmt.Printf("✓ Sent to %s (%s)\n", result.Workspace, result.Channel)
 
@@ -65,8 +65,8 @@ func main() {
 			Link:    link,
 		})
 		if !result.Success {
-			fmt.Println("Error:", result.Error)
-			return
+			fmt.Fprintln(os.Stderr, "Error:", result.Error)
+			os.Exit(1)
 		}
 		fmt.Printf("✓ Sent to %s (%s)\n", result.Workspace, result.Channel)
 
@@ -74,8 +74,8 @@ func main() {
 	default:
 		r1 := apialerts.SendAsync(apialerts.Event{Message: "Go SDK - minimal"})
 		if !r1.Success {
-			fmt.Println("Error (minimal):", r1.Error)
-			return
+			fmt.Fprintln(os.Stderr, "Error (minimal):", r1.Error)
+			os.Exit(1)
 		}
 		fmt.Printf("✓ sent to %s (%s)\n", r1.Workspace, r1.Channel)
 
@@ -88,8 +88,8 @@ func main() {
 			Link:    link,
 		})
 		if !r2.Success {
-			fmt.Println("Error (full):", r2.Error)
-			return
+			fmt.Fprintln(os.Stderr, "Error (full):", r2.Error)
+			os.Exit(1)
 		}
 		fmt.Printf("✓ sent to %s (%s)\n", r2.Workspace, r2.Channel)
 	}
