@@ -3,16 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/apialerts/apialerts-go"
 	"os"
+
+	"github.com/apialerts/apialerts-go"
 )
 
 func main() {
-	build            := flag.Bool("build",            false, "Send build notification")
-	release          := flag.Bool("release",          false, "Send release notification")
-	publish          := flag.Bool("publish",          false, "Send publish notification")
+	build := flag.Bool("build", false, "Send build notification")
+	release := flag.Bool("release", false, "Send release notification")
+	publish := flag.Bool("publish", false, "Send publish notification")
 	integrationTests := flag.Bool("integration-tests", false, "Run integration tests")
-	channel          := flag.String("channel",        "testing", "Channel for integration test sends")
+	channel := flag.String("channel", "testing", "Channel for integration test sends")
 	flag.Parse()
 
 	apiKey := os.Getenv("APIALERTS_API_KEY")
@@ -26,7 +27,7 @@ func main() {
 	link := "https://github.com/apialerts/apialerts-go/actions"
 
 	switch {
-	// SDK CI notifications — called from build-release.yml / publish.yml
+	// SDK CI notifications, called from build-release.yml / publish.yml
 	case *build:
 		result, err := apialerts.SendAsync(apialerts.Event{
 			Channel: "developer",

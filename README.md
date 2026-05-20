@@ -24,7 +24,7 @@ apialerts.Send(apialerts.Event{Message: "Deploy complete"})
 
 ## Setup
 
-The client is a singleton — configure it once at startup.
+The client is a singleton. Configure it once at startup; later calls to `Configure` are ignored.
 
 ```go
 // Basic setup

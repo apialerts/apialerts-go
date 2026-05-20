@@ -28,7 +28,7 @@ func slowServer(delay time.Duration) *httptest.Server {
 	}))
 }
 
-func captureServer(t *testing.T, statusCode int, body map[string]any) (*httptest.Server, *http.Request, chan *http.Request) {
+func captureServer(statusCode int, body map[string]any) (*httptest.Server, chan *http.Request) {
 	captured := make(chan *http.Request, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		captured <- r
@@ -38,7 +38,7 @@ func captureServer(t *testing.T, statusCode int, body map[string]any) (*httptest
 			json.NewEncoder(w).Encode(body)
 		}
 	}))
-	return server, nil, captured
+	return server, captured
 }
 
 // --- Validation tests ---
@@ -237,7 +237,7 @@ func TestSendTimeout(t *testing.T) {
 
 func TestRequestHeaders(t *testing.T) {
 	resetInstance()
-	server, _, captured := captureServer(t, http.StatusOK, map[string]any{
+	server, captured := captureServer(http.StatusOK, map[string]any{
 		"workspace": "test",
 		"channel":   "test",
 	})
@@ -264,7 +264,7 @@ func TestRequestHeaders(t *testing.T) {
 
 func TestSetOverridesHeaders(t *testing.T) {
 	resetInstance()
-	server, _, captured := captureServer(t, http.StatusOK, map[string]any{
+	server, captured := captureServer(http.StatusOK, map[string]any{
 		"workspace": "test",
 		"channel":   "test",
 	})
@@ -397,7 +397,7 @@ func TestRequestPayloadOmitsEmptyData(t *testing.T) {
 
 func TestSendWithApiKeyAsync(t *testing.T) {
 	resetInstance()
-	server, _, captured := captureServer(t, http.StatusOK, map[string]any{
+	server, captured := captureServer(http.StatusOK, map[string]any{
 		"workspace": "test",
 		"channel":   "test",
 	})
@@ -418,11 +418,27 @@ func TestSendWithApiKeyAsync(t *testing.T) {
 	}
 }
 
-// --- Fire-and-forget does not panic ---
+// --- Fire-and-forget reaches the server without panicking ---
 
 func TestSendDoesNotPanic(t *testing.T) {
 	resetInstance()
+	received := make(chan struct{}, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"workspace": "test", "channel": "test"})
+		received <- struct{}{}
+	}))
+	defer server.Close()
+
 	Configure("test_api_key")
-	// Should not panic even with a bad URL
+	SetOverrides("", "", server.URL)
+
 	Send(Event{Message: "hello"})
+
+	select {
+	case <-received:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Send did not reach the server")
+	}
 }

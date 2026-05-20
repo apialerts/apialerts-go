@@ -32,43 +32,28 @@ func initializeClient(apiKey string, config Config) *Client {
 }
 
 func (client *Client) sendToUrlWithApiKey(url string, apiKey string, event Event) {
-	// Critical checks — always log regardless of debug setting
+	// Critical checks: always log regardless of debug setting
 	if apiKey == "" {
-		log.Printf("x (apialerts.com) Error: api key is missing")
+		log.Print("x (apialerts.com) Error: api key is missing")
 		return
 	}
 	if event.Message == "" {
-		log.Printf("x (apialerts.com) Error: message is required")
+		log.Print("x (apialerts.com) Error: message is required")
 		return
 	}
 
-	type outcome struct {
-		result *Result
-		err    error
+	// This already runs in its own goroutine; httpClient.Timeout bounds the request.
+	result, err := client.sendToUrlWithApiKeyAsync(url, apiKey, event)
+	if !client.config.Debug {
+		return
 	}
-	ch := make(chan outcome, 1)
-	go func() {
-		r, e := client.sendToUrlWithApiKeyAsync(url, apiKey, event)
-		ch <- outcome{r, e}
-	}()
-
-	select {
-	case o := <-ch:
-		if !client.config.Debug {
-			return
-		}
-		if o.err != nil {
-			log.Printf("x (apialerts.com) Error: %s", o.err)
-		} else {
-			log.Printf("✓ (apialerts.com) Alert sent to %s (%s)", o.result.Workspace, o.result.Channel)
-			for _, w := range o.result.Warnings {
-				log.Printf("! (apialerts.com) Warning: %s", w)
-			}
-		}
-	case <-time.After(client.config.Timeout):
-		if client.config.Debug {
-			log.Println("x (apialerts.com) Error: Send operation timed out")
-		}
+	if err != nil {
+		log.Printf("x (apialerts.com) Error: %s", err)
+		return
+	}
+	log.Printf("✓ (apialerts.com) Alert sent to %s (%s)", result.Workspace, result.Channel)
+	for _, w := range result.Warnings {
+		log.Printf("! (apialerts.com) Warning: %s", w)
 	}
 }
 
@@ -130,7 +115,7 @@ func (client *Client) sendToUrlWithApiKeyAsync(url string, apiKey string, event 
 	case http.StatusBadRequest:
 		return nil, fmt.Errorf("bad request")
 	case http.StatusUnauthorized:
-		return nil, fmt.Errorf("unauthorized — check your API key")
+		return nil, fmt.Errorf("unauthorized, check your API key")
 	case http.StatusForbidden:
 		return nil, fmt.Errorf("forbidden")
 	case http.StatusTooManyRequests:
