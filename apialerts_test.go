@@ -54,6 +54,6 @@ func TestNotInitialized(t *testing.T) {
 
 	_, err := SendAsync(Event{Message: "test"})
 	if err == nil {
-		t.Error("Expected error when not initialized, got nil")
+		t.Error("Expected error when not initialized")
 	}
 }

@@ -1,7 +1,8 @@
 package apialerts
 
 import (
-	"errors"
+	"fmt"
+	"log"
 	"sync"
 	"time"
 )
@@ -10,7 +11,6 @@ var (
 	instance *Client
 	once     sync.Once
 )
-
 
 type Config struct {
 	Timeout time.Duration // Timeout specifies the duration to wait before timing out a request.
@@ -48,11 +48,6 @@ func SetApiKey(apiKey string) {
 
 // SetOverrides configures internal client settings used by first-party integrations
 // such as the official apialerts CLI. This is not intended for general SDK use.
-//
-// Parameters:
-//   - integration: identifies the caller (e.g. "apialerts-cli")
-//   - version: the caller's version string (e.g. "1.2.0")
-//   - baseURL: optional API URL override for testing or staging; pass empty string to use the default
 func SetOverrides(integration, version, baseURL string) {
 	if instance == nil {
 		return
@@ -69,34 +64,40 @@ func (client *Client) resolveURL() string {
 	return ApiUrl
 }
 
-// Send sends an event asynchronously using the default API key.
+// Send sends an event fire-and-forget using the default API key.
+// Critical errors (missing key, not configured) are always logged.
+// Other errors are only logged when debug is enabled.
 func Send(event Event) {
 	if instance == nil {
+		log.Printf("x (apialerts.com) Error: client not initialized — call Configure() first")
 		return
 	}
 	go instance.sendToUrlWithApiKey(instance.resolveURL(), instance.apiKey, event)
 }
 
-// SendAsync sends an event using the default API key, waits for the response, and returns the result or an error.
+// SendAsync sends an event using the default API key.
+// Returns an error if the send fails — check err before using result.
 func SendAsync(event Event) (*Result, error) {
 	if instance == nil {
-		return nil, errors.New("client not initialized — call Configure() first")
+		return nil, fmt.Errorf("client not initialized — call Configure() first")
 	}
 	return instance.sendToUrlWithApiKeyAsync(instance.resolveURL(), instance.apiKey, event)
 }
 
-// SendWithApiKey sends an event asynchronously using the provided API key.
+// SendWithApiKey sends an event fire-and-forget using the provided API key.
 func SendWithApiKey(apiKey string, event Event) {
 	if instance == nil {
+		log.Printf("x (apialerts.com) Error: client not initialized — call Configure() first")
 		return
 	}
 	go instance.sendToUrlWithApiKey(instance.resolveURL(), apiKey, event)
 }
 
-// SendWithApiKeyAsync sends an event using the provided API key, waits for the response, and returns the result or an error.
+// SendWithApiKeyAsync sends an event using the provided API key.
+// Returns an error if the send fails — check err before using result.
 func SendWithApiKeyAsync(apiKey string, event Event) (*Result, error) {
 	if instance == nil {
-		return nil, errors.New("client not initialized — call Configure() first")
+		return nil, fmt.Errorf("client not initialized — call Configure() first")
 	}
 	return instance.sendToUrlWithApiKeyAsync(instance.resolveURL(), apiKey, event)
 }

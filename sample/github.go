@@ -8,64 +8,94 @@ import (
 )
 
 func main() {
-	build, release, publish := parseFlags()
+	build            := flag.Bool("build",            false, "Send build notification")
+	release          := flag.Bool("release",          false, "Send release notification")
+	publish          := flag.Bool("publish",          false, "Send publish notification")
+	integrationTests := flag.Bool("integration-tests", false, "Run integration tests")
+	channel          := flag.String("channel",        "testing", "Channel for integration test sends")
+	flag.Parse()
 
-	apiKey := getApiKey()
+	apiKey := os.Getenv("APIALERTS_API_KEY")
 	if apiKey == "" {
-		fmt.Println("Error: APIALERTS_API_KEY environment variable is not set")
-		return
+		fmt.Fprintln(os.Stderr, "Error: APIALERTS_API_KEY environment variable is not set")
+		os.Exit(1)
 	}
 
 	apialerts.Configure(apiKey)
 
-	if !*build && !*release && !*publish {
-		fmt.Println("Usage: go run github.go --build|--release|--publish")
-		return
-	}
+	link := "https://github.com/apialerts/apialerts-go/actions"
 
-	event := createEvent(*build, *release, *publish)
+	switch {
+	// SDK CI notifications — called from build-release.yml / publish.yml
+	case *build:
+		result, err := apialerts.SendAsync(apialerts.Event{
+			Channel: "developer",
+			Event:   "ci.build",
+			Title:   "Build Passed",
+			Message: "Go - PR build success",
+			Tags:    []string{"CI/CD", "Go", "Build"},
+			Link:    link,
+		})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
+		}
+		fmt.Printf("✓ Sent to %s (%s)\n", result.Workspace, result.Channel)
 
-	if result, err := apialerts.SendAsync(event); err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		fmt.Printf("Alert sent to %s (%s) successfully.\n", result.Workspace, result.Channel)
-	}
-}
+	case *release:
+		result, err := apialerts.SendAsync(apialerts.Event{
+			Channel: "developer",
+			Event:   "ci.release",
+			Title:   "Release Build Passed",
+			Message: "Go - Build for publish success",
+			Tags:    []string{"CI/CD", "Go", "Build"},
+			Link:    link,
+		})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
+		}
+		fmt.Printf("✓ Sent to %s (%s)\n", result.Workspace, result.Channel)
 
-func parseFlags() (build, release, publish *bool) {
-	build = flag.Bool("build", false, "Build the project")
-	release = flag.Bool("release", false, "Release the project")
-	publish = flag.Bool("publish", false, "Publish the project")
-	flag.Parse()
-	return
-}
+	case *publish:
+		result, err := apialerts.SendAsync(apialerts.Event{
+			Channel: "releases",
+			Event:   "ci.publish",
+			Title:   "Published",
+			Message: "Go - GitHub publish success",
+			Tags:    []string{"CI/CD", "Go", "Deploy"},
+			Link:    link,
+		})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
+		}
+		fmt.Printf("✓ Sent to %s (%s)\n", result.Workspace, result.Channel)
 
-func getApiKey() string {
-	return os.Getenv("APIALERTS_API_KEY")
-}
+	case *integrationTests:
+		r1, err := apialerts.SendAsync(apialerts.Event{Message: "Go SDK - minimal", Channel: *channel})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error (minimal):", err)
+			os.Exit(1)
+		}
+		fmt.Printf("✓ sent to %s (%s)\n", r1.Workspace, r1.Channel)
 
-func createEvent(build, release, publish bool) apialerts.Event {
-	eventChannel := "developer"
-	eventMessage := "apialerts-go"
-	var eventTags []string
-	eventLink := "https://github.com/apialerts/apialerts-go/actions"
+		r2, err := apialerts.SendAsync(apialerts.Event{
+			Message: "Go SDK - full",
+			Channel: *channel,
+			Event:   "sdk.test",
+			Title:   "Integration Test",
+			Tags:    []string{"CI/CD", "Go"},
+			Link:    link,
+		})
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error (full):", err)
+			os.Exit(1)
+		}
+		fmt.Printf("✓ sent to %s (%s)\n", r2.Workspace, r2.Channel)
 
-	if build {
-		eventMessage = "Go - PR build success"
-		eventTags = []string{"CI/CD", "Go", "Build"}
-	} else if release {
-		eventMessage = "Go - Build for publish success"
-		eventTags = []string{"CI/CD", "Go", "Build"}
-	} else if publish {
-		eventChannel = "releases"
-		eventMessage = "Go - GitHub publish success"
-		eventTags = []string{"CI/CD", "Go", "Deploy"}
-	}
-
-	return apialerts.Event{
-		Channel: eventChannel,
-		Message: eventMessage,
-		Tags:    eventTags,
-		Link:    eventLink,
+	default:
+		fmt.Fprintln(os.Stderr, "Error: pass --build, --release, --publish, or --integration-tests")
+		os.Exit(1)
 	}
 }
