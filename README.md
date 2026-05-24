@@ -27,14 +27,10 @@ apialerts.Send(apialerts.Event{Message: "Deploy complete"})
 The client is a singleton. Configure it once at startup; later calls to `Configure` are ignored.
 
 ```go
-// Basic setup
 apialerts.Configure("your-api-key")
 
-// Custom config
-apialerts.ConfigureWithConfig("your-api-key", apialerts.Config{
-    Timeout: 45 * time.Second, // default: 30 seconds
-    Debug:   true,             // default: false
-})
+// Enable debug logging to stderr
+apialerts.SetDebug(true)
 ```
 
 ## Send Events
@@ -57,6 +53,8 @@ event := apialerts.Event{
 
 apialerts.Send(event)
 ```
+
+`Send` returns immediately and delivers in a background goroutine. In short-lived programs (CLI tools, CI scripts) that exit right after sending, use `SendAsync` so the process waits for delivery.
 
 ### Wait for response
 
@@ -100,12 +98,12 @@ Null/empty fields are omitted from the JSON payload automatically.
 
 ## Send to Multiple Workspaces
 
-Use `SendWithApiKey` or `SendWithApiKeyAsync` to override the API key for a single call.
+Use `SendWithKey` or `SendWithKeyAsync` to override the API key for a single call.
 
 ```go
-apialerts.SendWithApiKey("other-workspace-api-key", event)
+apialerts.SendWithKey("other-workspace-api-key", event)
 
-result, err := apialerts.SendWithApiKeyAsync("other-workspace-api-key", event)
+result, err := apialerts.SendWithKeyAsync("other-workspace-api-key", event)
 ```
 
 ## Links

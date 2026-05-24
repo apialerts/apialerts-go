@@ -225,7 +225,8 @@ func TestSendTimeout(t *testing.T) {
 	server := slowServer(2 * time.Second)
 	defer server.Close()
 
-	ConfigureWithConfig("test_api_key", Config{Timeout: 100 * time.Millisecond})
+	Configure("test_api_key")
+	instance.httpClient.Timeout = 100 * time.Millisecond
 
 	_, err := instance.sendToUrlWithApiKeyAsync(server.URL, "test_api_key", Event{Message: "hello"})
 	if err == nil {
@@ -393,9 +394,9 @@ func TestRequestPayloadOmitsEmptyData(t *testing.T) {
 	}
 }
 
-// --- SendWithApiKeyAsync test ---
+// --- SendWithKeyAsync test ---
 
-func TestSendWithApiKeyAsync(t *testing.T) {
+func TestSendWithKeyAsync(t *testing.T) {
 	resetInstance()
 	server, captured := captureServer(http.StatusOK, map[string]any{
 		"workspace": "test",
@@ -406,7 +407,7 @@ func TestSendWithApiKeyAsync(t *testing.T) {
 	Configure("original_key")
 	SetOverrides("", "", server.URL)
 
-	result, err := SendWithApiKeyAsync("override_key", Event{Message: "hello"})
+	result, err := SendWithKeyAsync("override_key", Event{Message: "hello"})
 	if err != nil {
 		t.Fatalf("expected success, got error: %s", err)
 	}

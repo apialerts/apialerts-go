@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 )
 
 type Client struct {
@@ -14,19 +13,16 @@ type Client struct {
 	integration        string
 	integrationVersion string
 	baseURL            string
-	config             Config
+	debug              bool
 	httpClient         *http.Client
 }
 
-func initializeClient(apiKey string, config Config) *Client {
-	if config.Timeout == 0 {
-		config.Timeout = 30 * time.Second
-	}
+func initializeClient(apiKey string) *Client {
 	return &Client{
 		apiKey: apiKey,
-		config: config,
+		debug:  false,
 		httpClient: &http.Client{
-			Timeout: config.Timeout,
+			Timeout: DefaultTimeout,
 		},
 	}
 }
@@ -44,7 +40,7 @@ func (client *Client) sendToUrlWithApiKey(url string, apiKey string, event Event
 
 	// This already runs in its own goroutine; httpClient.Timeout bounds the request.
 	result, err := client.sendToUrlWithApiKeyAsync(url, apiKey, event)
-	if !client.config.Debug {
+	if !client.debug {
 		return
 	}
 	if err != nil {
