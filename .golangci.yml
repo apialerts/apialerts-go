@@ -1,0 +1,47 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - revive
+    - gocyclo
+    - gosec
+    - misspell
+    - unconvert
+    - whitespace
+  settings:
+    gocyclo:
+      min-complexity: 20
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: dot-imports
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: indent-error-flow
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unreachable-code
+        - name: var-declaration
+  exclusions:
+    rules:
+      # The SDK posts to a configurable endpoint URL by design.
+      - linters: [gosec]
+        text: "G107"
+      # Deferred Close on the response body is intentional.
+      - linters: [errcheck]
+        source: 'defer .*\.Close\(\)'
+      # Test helpers intentionally ignore encode/write/send errors.
+      - linters: [errcheck, gosec]
+        path: _test\.go
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

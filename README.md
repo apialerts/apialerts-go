@@ -1,53 +1,113 @@
-# API Alerts • GO Client
+# API Alerts • Go SDK
 
-[GitHub Repo](https://github.com/apialerts/apialerts-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/apialerts/apialerts-go.svg)](https://pkg.go.dev/github.com/apialerts/apialerts-go)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+[GitHub](https://github.com/apialerts/apialerts-go) • [API Alerts](https://apialerts.com)
+
+Effortless project notifications. Send once, deliver everywhere.
 
 ## Installation
 
-Add the following dependency to your GO application
-
 ```bash
-go get github.com/apialerts/apialerts-go
+go get github.com/apialerts/apialerts-go@v1.2.0
 ```
 
-### Initialize the client
-
-The client is implemented as a singleton, ensuring that only one instance is created and used throughout the application.
+## Quick Start
 
 ```go
-// Basic initialization with default config
+import apialerts "github.com/apialerts/apialerts-go"
+
+apialerts.Configure("your-api-key")
+apialerts.Send(apialerts.Event{Message: "Deploy complete"})
+```
+
+## Setup
+
+The client is a singleton. Configure it once at startup; later calls to `Configure` are ignored.
+
+```go
 apialerts.Configure("your-api-key")
 
-// or initialization with custom config
-customConfig := apialerts.Config {
-    Timeout: 45 * time.Second,  // default is 30 seconds
-    Debug:   True,              // default is false
-}
-apialerts.ConfigureWithConfig("test_api_key", customConfig)
-}
+// Enable debug logging to stderr
+apialerts.SetDebug(true)
 ```
 
-### Send Events
+## Send Events
 
-You can send alerts by constructing the Event struct and passing it to the Send() function.
+### Fire and forget
 
 ```go
-event := apialerts.Event {
-    Channel: "test_channel",           // optional, uses the default channel if not provided
-    Message: "Test message",           // required
-    Tags:    []string{"tag1", "tag2"}, // optional
-    Link:    "http://example.com",     // optional
+event := apialerts.Event{
+    Message: "Deploy complete",          // required
+    Channel: "deployments",              // optional, uses default channel if not set
+    Event:   "deploy.success",           // optional, event name for routing
+    Title:   "Production Deploy",        // optional
+    Tags:    []string{"deploy", "prod"}, // optional
+    Link:    "https://example.com",      // optional
+    Data:    map[string]any{     // optional, arbitrary JSON data
+        "version": "1.4.2",
+        "region":  "us-east-1",
+    },
 }
 
 apialerts.Send(event)
 ```
 
-The apialerts.sendAsync() methods are also available if you need to wait for a successful execution. However, the send() functions are generally always preferred.
+`Send` returns immediately and delivers in a background goroutine. In short-lived programs (CLI tools, CI scripts) that exit right after sending, use `SendAsync` so the process waits for delivery.
 
-### Send with API Key functions
+### Wait for response
 
-You may have the need to talk to different API Alerts workspaces in your application. You can use the SendWithAPIKey() functions to send alerts to override the default apikey for that single send call
+`SendAsync` blocks until the request completes and returns the result or an error.
 
 ```go
-apialerts.SendWithApiKey("other_api_key", event)
+result, err := apialerts.SendAsync(event)
+if err != nil {
+    log.Println("Failed to send:", err)
+    return
+}
+
+fmt.Printf("Sent to %s (%s)\n", result.Workspace, result.Channel)
+
+for _, warning := range result.Warnings {
+    fmt.Println("Warning:", warning)
+}
 ```
+
+The `Result` contains:
+
+| Field | Description |
+|-------|-------------|
+| `Workspace` | Name of the workspace the event was delivered to |
+| `Channel` | Name of the channel the event was delivered to |
+| `Warnings` | Any non-fatal warnings returned by the API (e.g. unknown fields) |
+
+## Event Fields
+
+| Field     | Type             | Required | Description                      |
+|-----------|------------------|----------|----------------------------------|
+| `Message` | `string`         | Yes      | Main notification message        |
+| `Channel` | `string`         | No       | Target channel name              |
+| `Event`   | `string`         | No       | Event key (e.g. `ci.deploy`)     |
+| `Title`   | `string`         | No       | Short title                      |
+| `Tags`    | `[]string`       | No       | Categorisation tags              |
+| `Link`    | `string`         | No       | URL attached to the notification |
+| `Data`    | `map[string]any` | No       | Arbitrary key-value metadata     |
+
+Null/empty fields are omitted from the JSON payload automatically.
+
+## Send to Multiple Workspaces
+
+Use `SendWithKey` or `SendWithKeyAsync` to override the API key for a single call.
+
+```go
+apialerts.SendWithKey("other-workspace-api-key", event)
+
+result, err := apialerts.SendWithKeyAsync("other-workspace-api-key", event)
+```
+
+## Links
+
+- [Documentation](https://apialerts.com/docs)
+- [Sign up](https://apialerts.com)
+- [GitHub Issues](https://github.com/apialerts/apialerts-go/issues)

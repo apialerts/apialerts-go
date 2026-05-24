@@ -10,13 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.22'
+          go-version-file: 'go.mod'
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
       - name: Test
-        run: go test -v
+        run: go test -v ./...
       - name: Send Release Alert
         working-directory: ./sample
         run: go run github.go --release

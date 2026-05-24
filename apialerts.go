@@ -1,8 +1,9 @@
 package apialerts
 
 import (
+	"fmt"
+	"log"
 	"sync"
-	"time"
 )
 
 var (
@@ -10,58 +11,84 @@ var (
 	once     sync.Once
 )
 
-type Config struct {
-	Timeout time.Duration // Timeout specifies the duration to wait before timing out a request.
-	Debug   bool          // Debug enables or disables debug logging.
-}
-
-var defaultConfig = Config{
-	Timeout: 30 * time.Second,
-	Debug:   false,
-}
-
-func setupClient(apiKey string, config Config) {
+func setupClient(apiKey string) {
 	once.Do(func() {
-		instance = initializeClient(apiKey, config)
+		instance = initializeClient(apiKey)
 	})
 }
 
-// Configure initializes the client with the default configuration using the provided API key.
+// Configure initializes the client with the provided API key.
+// Subsequent calls are no-ops: the first call wins.
 func Configure(apiKey string) {
-	setupClient(apiKey, defaultConfig)
+	setupClient(apiKey)
 }
 
-// ConfigureWithConfig initializes the client with a custom configuration using the provided API key.
-func ConfigureWithConfig(apiKey string, config Config) {
-	setupClient(apiKey, config)
+// SetDebug enables or disables debug logging to stderr.
+// When enabled, successful sends and errors are logged.
+func SetDebug(debug bool) {
+	if instance == nil {
+		return
+	}
+	instance.debug = debug
 }
 
-// GetInstance returns the singleton instance of the Client.
-func GetInstance() *Client {
-	return instance
+// SetOverrides configures internal client settings used by first-party integrations
+// such as the official apialerts CLI. This is not intended for general SDK use.
+func SetOverrides(integration, version, baseURL string) {
+	if instance == nil {
+		return
+	}
+	instance.integration = integration
+	instance.integrationVersion = version
+	instance.baseURL = baseURL
 }
 
-// SetApiKey sets a new API key for the client instance.
-func SetApiKey(apiKey string) {
-	instance.apiKey = apiKey
+func (client *Client) resolveURL() string {
+	if client.baseURL != "" {
+		return client.baseURL
+	}
+	return ApiUrl
 }
 
-// Send sends an event asynchronously using the default API key.
+// Send sends an event fire-and-forget using the default API key.
+// It returns immediately and delivers in a background goroutine. In
+// short-lived programs (CLI tools, CI scripts) that exit right after
+// sending, use SendAsync instead so the process waits for delivery.
+// Critical errors (missing key, not configured) are always logged.
+// Other errors are only logged when debug is enabled.
 func Send(event Event) {
-	go instance.sendToUrlWithApiKey(ApiUrl, instance.apiKey, event)
+	if instance == nil {
+		log.Print("x (apialerts.com) Error: client not initialized, call Configure() first")
+		return
+	}
+	go instance.sendToUrlWithApiKey(instance.resolveURL(), instance.apiKey, event)
 }
 
-// SendAsync sends an event asynchronously using the default API key, waits for the response, and returns an error if any.
-func SendAsync(event Event) error {
-	return instance.sendToUrlWithApiKeyAsync(ApiUrl, instance.apiKey, event)
+// SendAsync sends an event using the default API key.
+// Returns an error if the send fails. Check err before using result.
+func SendAsync(event Event) (*Result, error) {
+	if instance == nil {
+		return nil, fmt.Errorf("client not initialized, call Configure() first")
+	}
+	return instance.sendToUrlWithApiKeyAsync(instance.resolveURL(), instance.apiKey, event)
 }
 
-// SendWithApiKey sends an event asynchronously using the provided API key.
-func SendWithApiKey(apiKey string, event Event) {
-	instance.sendToUrlWithApiKey(ApiUrl, apiKey, event)
+// SendWithKey sends an event fire-and-forget using the provided API key.
+// Like Send, delivery happens in a background goroutine; use
+// SendWithKeyAsync in short-lived programs that exit right after sending.
+func SendWithKey(apiKey string, event Event) {
+	if instance == nil {
+		log.Print("x (apialerts.com) Error: client not initialized, call Configure() first")
+		return
+	}
+	go instance.sendToUrlWithApiKey(instance.resolveURL(), apiKey, event)
 }
 
-// SendWithApiKeyAsync sends an event asynchronously using the provided API key, waits for the response, and returns an error if any.
-func SendWithApiKeyAsync(apiKey string, event Event) error {
-	return instance.sendToUrlWithApiKeyAsync(ApiUrl, apiKey, event)
+// SendWithKeyAsync sends an event using the provided API key.
+// Returns an error if the send fails. Check err before using result.
+func SendWithKeyAsync(apiKey string, event Event) (*Result, error) {
+	if instance == nil {
+		return nil, fmt.Errorf("client not initialized, call Configure() first")
+	}
+	return instance.sendToUrlWithApiKeyAsync(instance.resolveURL(), apiKey, event)
 }

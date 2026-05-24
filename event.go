@@ -1,8 +1,17 @@
 package apialerts
 
 type Event struct {
-	Channel string   `json:"channel"`
-	Message string   `json:"message"`
-	Tags    []string `json:"tags"`
-	Link    string   `json:"link"`
+	Message string         `json:"message"`
+	Channel string         `json:"channel,omitempty"`
+	Event   string         `json:"event,omitempty"`
+	Title   string         `json:"title,omitempty"`
+	Tags    []string       `json:"tags,omitempty"`
+	Link    string         `json:"link,omitempty"`
+	Data    map[string]any `json:"data,omitempty"`
+}
+
+type Result struct {
+	Workspace string
+	Channel   string
+	Warnings  []string
 }
