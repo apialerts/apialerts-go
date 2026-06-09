@@ -31,11 +31,12 @@ func main() {
 	case *build:
 		result, err := apialerts.SendAsync(apialerts.Event{
 			Channel: "developer",
-			Event:   "ci.build",
+			Event:   "ci.sdk.build.go",
 			Title:   "Build Passed",
 			Message: "Go - PR build success",
 			Tags:    []string{"CI/CD", "Go", "Build"},
 			Link:    link,
+			Data:    map[string]any{"integration": "go"},
 		})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -46,11 +47,12 @@ func main() {
 	case *release:
 		result, err := apialerts.SendAsync(apialerts.Event{
 			Channel: "developer",
-			Event:   "ci.release",
+			Event:   "ci.sdk.release.go",
 			Title:   "Release Build Passed",
 			Message: "Go - Build for publish success",
 			Tags:    []string{"CI/CD", "Go", "Build"},
 			Link:    link,
+			Data:    map[string]any{"integration": "go"},
 		})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -61,11 +63,12 @@ func main() {
 	case *publish:
 		result, err := apialerts.SendAsync(apialerts.Event{
 			Channel: "releases",
-			Event:   "ci.publish",
+			Event:   "ci.sdk.publish.go",
 			Title:   "Published",
 			Message: "Go - GitHub publish success",
 			Tags:    []string{"CI/CD", "Go", "Deploy"},
 			Link:    link,
+			Data:    map[string]any{"integration": "go"},
 		})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -84,10 +87,11 @@ func main() {
 		r2, err := apialerts.SendAsync(apialerts.Event{
 			Message: "Go SDK - full",
 			Channel: *channel,
-			Event:   "sdk.test",
+			Event:   "ci.sdk.integration.go",
 			Title:   "Integration Test",
 			Tags:    []string{"CI/CD", "Go"},
 			Link:    link,
+			Data:    map[string]any{"integration": "go"},
 		})
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error (full):", err)
